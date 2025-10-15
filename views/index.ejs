@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ParkEase - Smart Parking Management System</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      color: #333;
+      overflow-x: hidden;
+    }
+
+    .hero-section {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-section::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000"><polygon fill="rgba(255,255,255,0.05)" points="0,1000 1000,0 1000,1000"/></svg>');
+      animation: float 6s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-20px); }
+    }
+
+    .hero-content {
+      max-width: 800px;
+      z-index: 2;
+      position: relative;
+    }
+
+    .hero-badge {
+      display: inline-block;
+      background: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(10px);
+      color: white;
+      padding: 0.5rem 1.5rem;
+      border-radius: 50px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-bottom: 2rem;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+
+    .hero-title {
+      font-size: 4rem;
+      font-weight: 800;
+      color: white;
+      margin-bottom: 1.5rem;
+      line-height: 1.1;
+      text-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .hero-title .highlight {
+      background: linear-gradient(45deg, #ffd89b, #19547b);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-subtitle {
+      font-size: 1.4rem;
+      color: rgba(255, 255, 255, 0.9);
+      margin-bottom: 3rem;
+      line-height: 1.6;
+      font-weight: 300;
+    }
+
+    .cta-buttons {
+      display: flex;
+      gap: 1.5rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 4rem;
+    }
+
+    .cta-button {
+      padding: 1rem 2.5rem;
+      font-size: 1.1rem;
+      font-weight: 600;
+      text-decoration: none;
+      border-radius: 50px;
+      transition: all 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .cta-button.primary {
+      background: linear-gradient(135deg, #ffd89b, #19547b);
+      color: white;
+      box-shadow: 0 8px 30px rgba(255, 216, 155, 0.4);
+    }
+
+    .cta-button.secondary {
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(10px);
+      color: white;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .cta-button:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+    }
+
+    .cta-button.primary:hover {
+      background: linear-gradient(135deg, #19547b, #ffd89b);
+    }
+
+    .cta-button.secondary:hover {
+      background: rgba(255, 255, 255, 0.25);
+    }
+
+    .features-section {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(20px);
+      padding: 5rem 2rem;
+      border-radius: 40px 40px 0 0;
+      margin-top: -50px;
+      position: relative;
+    }
+
+    .features-grid {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 2rem;
+    }
+
+    .feature-card {
+      background: white;
+      padding: 2.5rem;
+      border-radius: 20px;
+      text-align: center;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+      transition: all 0.3s ease;
+      border: 1px solid rgba(255, 255, 255, 0.5);
+    }
+
+    .feature-card:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+    }
+
+    .feature-icon {
+      font-size: 3rem;
+      margin-bottom: 1.5rem;
+      display: block;
+    }
+
+    .feature-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #2c3e50;
+      margin-bottom: 1rem;
+    }
+
+    .feature-description {
+      color: #7f8c8d;
+      line-height: 1.6;
+    }
+
+    .stats-section {
+      background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+      color: white;
+      padding: 4rem 2rem;
+      text-align: center;
+    }
+
+    .stats-grid {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 2rem;
+    }
+
+    .stat-item {
+      padding: 2rem;
+    }
+
+    .stat-number {
+      font-size: 3rem;
+      font-weight: 800;
+      margin-bottom: 0.5rem;
+      background: linear-gradient(45deg, #fff, #e0f7fa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .stat-label {
+      font-size: 1.1rem;
+      opacity: 0.9;
+      font-weight: 300;
+    }
+
+    .testimonial-section {
+      background: white;
+      padding: 5rem 2rem;
+      text-align: center;
+    }
+
+    .testimonial {
+      max-width: 600px;
+      margin: 0 auto;
+      font-style: italic;
+      font-size: 1.2rem;
+      color: #7f8c8d;
+      line-height: 1.6;
+    }
+
+    .testimonial-author {
+      margin-top: 2rem;
+      font-weight: 600;
+      color: #2c3e50;
+    }
+
+    .floating-elements {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+    }
+
+    .floating-element {
+      position: absolute;
+      font-size: 2rem;
+      opacity: 0.1;
+      animation: floatAround 15s linear infinite;
+    }
+
+    @keyframes floatAround {
+      0% { transform: translate(0, 0) rotate(0deg); }
+      25% { transform: translate(100px, 50px) rotate(90deg); }
+      50% { transform: translate(50px, 100px) rotate(180deg); }
+      75% { transform: translate(-50px, 50px) rotate(270deg); }
+      100% { transform: translate(0, 0) rotate(360deg); }
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      .hero-title {
+        font-size: 2.5rem;
+      }
+
+      .hero-subtitle {
+        font-size: 1.1rem;
+      }
+
+      .cta-buttons {
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .cta-button {
+        width: 100%;
+        max-width: 300px;
+        justify-content: center;
+      }
+
+      .features-section {
+        padding: 3rem 1rem;
+        border-radius: 30px 30px 0 0;
+      }
+
+      .feature-card {
+        padding: 2rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .hero-title {
+        font-size: 2rem;
+      }
+
+      .hero-section {
+        padding: 1rem;
+      }
+
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Scroll animations */
+    .fade-in {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: all 0.6s ease;
+    }
+
+    .fade-in.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Hero Section -->
+  <section class="hero-section">
+    <div class="floating-elements">
+      <div class="floating-element" style="top: 10%; left: 5%;">🚗</div>
+      <div class="floating-element" style="top: 20%; right: 10%;">🅿️</div>
+      <div class="floating-element" style="bottom: 30%; left: 15%;">⏱️</div>
+      <div class="floating-element" style="bottom: 20%; right: 5%;">💰</div>
+    </div>
+    
+    <div class="hero-content">
+      <div class="hero-badge">🚀 Revolutionizing Parking Management</div>
+      
+      <h1 class="hero-title">
+        Park <span class="highlight">Smarter</span>,<br>
+        Live <span class="highlight">Easier</span>
+      </h1>
+      
+      <p class="hero-subtitle">
+        Say goodbye to parking stress! Our intelligent system transforms your parking experience 
+        with seamless reservations, real-time availability, and effortless payments. 
+      </p>
+      <p class="hero-subtitle">
+    
+        Your time is precious—spend it living, not parking.
+      </p>
+
+      <div class="cta-buttons">
+        <a href="/register" class="cta-button primary">
+          <span>🎯</span>
+          Start Your Journey
+        </a>
+        <a href="/login" class="cta-button secondary">
+          <span>🔑</span>
+          Returning User
+        </a>
+      </div>
+
+      <div class="stats-preview">
+        <div style="color: rgba(255,255,255,0.8); font-size: 0.9rem;">
+          ⭐ Trusted by thousands of drivers daily
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section class="features-section">
+    <div class="features-grid">
+      <div class="feature-card fade-in">
+        <div class="feature-icon">🚀</div>
+        <h3 class="feature-title">Lightning Fast</h3>
+        <p class="feature-description">
+          Find and reserve parking in seconds, not minutes. Our optimized system gets you parked faster, 
+          so you can focus on what matters most.
+        </p>
+      </div>
+
+      <div class="feature-card fade-in">
+        <div class="feature-icon">💡</div>
+        <h3 class="feature-title">Smart Technology</h3>
+        <p class="feature-description">
+          AI-powered parking recommendations and real-time availability updates ensure you always get 
+          the perfect spot, every single time.
+        </p>
+      </div>
+
+      <div class="feature-card fade-in">
+        <div class="feature-icon">🛡️</div>
+        <h3 class="feature-title">Secure & Reliable</h3>
+        <p class="feature-description">
+          Your peace of mind is our priority. With enterprise-grade security and 99.9% uptime, 
+          your parking needs are always covered.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Stats Section -->
+  <section class="stats-section">
+    <div class="stats-grid">
+      <div class="stat-item">
+        <div class="stat-number">10K+</div>
+        <div class="stat-label">Happy Customers</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number">50K+</div>
+        <div class="stat-label">Parking Sessions</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number">99.9%</div>
+        <div class="stat-label">Uptime Guarantee</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number">24/7</div>
+        <div class="stat-label">Support</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Testimonial Section -->
+  <section class="testimonial-section">
+    <div class="testimonial fade-in">
+      "This system transformed our daily routine! What used to be a 15-minute parking hunt now takes seconds. 
+      It's like having a personal parking assistant available 24/7."
+    </div>
+    <div class="testimonial-author">- Sarah M., Regular User</div>
+  </section>
+
+
+  <%- include("./patials/_footer.ejs") %>
+
+  <script>
+    // Scroll animations
+    document.addEventListener('DOMContentLoaded', function() {
+      const fadeElements = document.querySelectorAll('.fade-in');
+      
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+          }
+        });
+      }, { threshold: 0.1 });
+
+      fadeElements.forEach(element => {
+        observer.observe(element);
+      });
+
+      // Add some interactive elements
+      const ctaButtons = document.querySelectorAll('.cta-button');
+      ctaButtons.forEach(button => {
+        button.addEventListener('mouseenter', function() {
+          this.style.transform = 'translateY(-3px) scale(1.02)';
+        });
+        
+        button.addEventListener('mouseleave', function() {
+          this.style.transform = 'translateY(0) scale(1)';
+        });
+      });
+
+      // Auto-typing effect for hero subtitle
+      const heroSubtitle = document.querySelector('.hero-subtitle');
+      const originalText = heroSubtitle.innerHTML;
+      heroSubtitle.innerHTML = '';
+      let i = 0;
+      
+      function typeWriter() {
+        if (i < originalText.length) {
+          heroSubtitle.innerHTML += originalText.charAt(i);
+          i++;
+          setTimeout(typeWriter, 20);
+        }
+      }
+      
+      // Start typing after a short delay
+      setTimeout(typeWriter, 1000);
+    });
+  </script>
+</body>
+</html>

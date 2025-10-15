@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Parking Slots</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      color: #333;
+      overflow-x: hidden;
+    }
+
+    /* Header Styles */
+    header {
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(10px);
+      color: white;
+      padding: 1rem 2rem;
+      box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .header-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .logo {
+      font-size: 1.8rem;
+      font-weight: 800;
+      background: linear-gradient(45deg, #ffd89b, #19547b);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 1.5rem;
+    }
+
+    .nav-links a {
+      color: white;
+      text-decoration: none;
+      font-weight: 500;
+      transition: all 0.3s;
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+    }
+
+    .nav-links a:hover, .nav-links a.active {
+      background: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(10px);
+    }
+
+    /* Main Container */
+    .container {
+      max-width: 1200px;
+      margin: 2rem auto;
+      padding: 0 1.5rem;
+    }
+
+    /* Page Title */
+    h2 {
+      color: white;
+      margin-bottom: 1.5rem;
+      padding-bottom: 0.5rem;
+      font-weight: 700;
+      font-size: 2.5rem;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+      text-align: center;
+    }
+
+    /* Alert Messages */
+    .alert {
+      padding: 1rem;
+      border-radius: 10px;
+      margin-bottom: 1.5rem;
+      font-weight: 500;
+    }
+
+    .alert-success {
+      background: rgba(72, 187, 120, 0.2);
+      color: #2d3748;
+      border: 1px solid rgba(72, 187, 120, 0.3);
+    }
+
+    .alert-error {
+      background: rgba(245, 101, 101, 0.2);
+      color: #2d3748;
+      border: 1px solid rgba(245, 101, 101, 0.3);
+    }
+
+    /* Form Styles */
+    .form-container {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(20px);
+      border-radius: 20px;
+      padding: 2rem;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+      margin-bottom: 2rem;
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      transition: all 0.3s ease;
+    }
+
+    .form-container:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 15px 50px rgba(0, 0, 0, 0.2);
+    }
+
+    .form-title {
+      font-size: 1.5rem;
+      margin-bottom: 1.5rem;
+      color: #2c3e50;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+      color: #4a5568;
+    }
+
+    input[type="text"],
+    select {
+      width: 100%;
+      padding: 1rem;
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      border-radius: 10px;
+      font-size: 1rem;
+      transition: all 0.3s;
+      background: rgba(255, 255, 255, 0.8);
+    }
+
+    input[type="text"]:focus,
+    select:focus {
+      border-color: #4299e1;
+      box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.2);
+      outline: none;
+      background: white;
+    }
+
+    .btn {
+      padding: 1rem 2rem;
+      border: none;
+      border-radius: 50px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+      color: white;
+      box-shadow: 0 8px 25px rgba(106, 17, 203, 0.4);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 30px rgba(106, 17, 203, 0.6);
+    }
+
+    .btn-sm {
+      padding: 0.6rem 1.2rem;
+      font-size: 0.85rem;
+    }
+
+    /* Table Styles */
+    .table-container {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(20px);
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+      margin-top: 2rem;
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      transition: all 0.3s ease;
+    }
+
+    .table-container:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 15px 50px rgba(0, 0, 0, 0.2);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    thead {
+      background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+      color: white;
+    }
+
+    th {
+      padding: 1.2rem;
+      text-align: left;
+      font-weight: 600;
+    }
+
+    tbody tr {
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    tbody tr:nth-child(even) {
+      background-color: rgba(0, 0, 0, 0.02);
+    }
+
+    tbody tr:hover {
+      background-color: rgba(66, 153, 225, 0.1);
+    }
+
+    td {
+      padding: 1.2rem;
+    }
+
+    /* Action Buttons */
+    .action-buttons {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .btn-success {
+      background: linear-gradient(135deg, #38a169 0%, #2f855a 100%);
+      color: white;
+      padding: 0.6rem 1.2rem;
+      font-size: 0.85rem;
+      border-radius: 50px;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      transition: all 0.3s;
+      border: none;
+      cursor: pointer;
+    }
+
+    .btn-success:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(56, 161, 105, 0.4);
+    }
+
+    .btn-warning {
+      background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%);
+      color: white;
+      padding: 0.6rem 1.2rem;
+      font-size: 0.85rem;
+      border-radius: 50px;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      transition: all 0.3s;
+      border: none;
+      cursor: pointer;
+    }
+
+    .btn-warning:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(237, 137, 54, 0.4);
+    }
+
+    .btn-danger {
+      background: linear-gradient(135deg, #e53e3e 0%, #c53030 100%);
+      color: white;
+      padding: 0.6rem 1.2rem;
+      font-size: 0.85rem;
+      border-radius: 50px;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      transition: all 0.3s;
+      border: none;
+      cursor: pointer;
+    }
+
+    .btn-danger:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(229, 62, 62, 0.4);
+    }
+
+    /* Footer Styles */
+    footer {
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(10px);
+      color: rgba(255, 255, 255, 0.9);
+      text-align: center;
+      padding: 2rem;
+      margin-top: 3rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      .header-content {
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .nav-links {
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+
+      table {
+        display: block;
+        overflow-x: auto;
+      }
+
+      .action-buttons {
+        flex-direction: column;
+      }
+      
+      h2 {
+        font-size: 2rem;
+      }
+    }
+
+    /* Divider */
+    hr {
+      border: none;
+      height: 1px;
+      background: linear-gradient(to right, transparent, rgba(255,255,255,0.5), transparent);
+      margin: 3rem 0;
+    }
+
+    /* Floating Elements */
+    .floating-elements {
+      position: fixed;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    .floating-element {
+      position: absolute;
+      font-size: 2rem;
+      opacity: 0.1;
+      animation: floatAround 20s linear infinite;
+    }
+
+    @keyframes floatAround {
+      0% { transform: translate(0, 0) rotate(0deg); }
+      25% { transform: translate(100px, 50px) rotate(90deg); }
+      50% { transform: translate(50px, 100px) rotate(180deg); }
+      75% { transform: translate(-50px, 50px) rotate(270deg); }
+      100% { transform: translate(0, 0) rotate(360deg); }
+    }
+
+    /* Stats Section */
+    .stats-section {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(20px);
+      padding: 3rem 2rem;
+      border-radius: 20px;
+      margin: 2rem 0;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 2rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .stat-item {
+      text-align: center;
+      padding: 1.5rem;
+    }
+
+    .stat-number {
+      font-size: 2.5rem;
+      font-weight: 800;
+      margin-bottom: 0.5rem;
+      background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .stat-label {
+      font-size: 1rem;
+      color: #4a5568;
+      font-weight: 500;
+    }
+
+    /* Status Badges */
+    .status-badge {
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      display: inline-block;
+      text-align: center;
+      min-width: 100px;
+    }
+
+    .badge-available {
+      background: linear-gradient(135deg, #38a169, #2f855a);
+      color: white;
+    }
+
+    .badge-occupied {
+      background: linear-gradient(135deg, #e53e3e, #c53030);
+      color: white;
+    }
+
+    .badge-reserved {
+      background: linear-gradient(135deg, #ed8936, #dd6b20);
+      color: white;
+    }
+
+    .badge-disabled {
+      background: linear-gradient(135deg, #718096, #4a5568);
+      color: white;
+    }
+
+    /* No Data State */
+    .no-data {
+      text-align: center;
+      padding: 3rem;
+      color: #718096;
+      font-style: italic;
+    }
+
+    /* Form Layout */
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+
+    @media (max-width: 768px) {
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Slot Grid View */
+    .slots-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1.5rem;
+      margin-top: 2rem;
+    }
+
+    .slot-card {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(20px);
+      border-radius: 15px;
+      padding: 1.5rem;
+      text-align: center;
+      border: 2px solid transparent;
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+
+    .slot-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    }
+
+    .slot-card.available {
+      border-color: #38a169;
+    }
+
+    .slot-card.occupied {
+      border-color: #e53e3e;
+    }
+
+    .slot-card.reserved {
+      border-color: #ed8936;
+    }
+
+    .slot-card.disabled {
+      border-color: #718096;
+      opacity: 0.7;
+    }
+
+    .slot-number {
+      font-size: 1.5rem;
+      font-weight: 800;
+      margin-bottom: 0.5rem;
+      color: #2d3748;
+    }
+
+    .slot-type {
+      font-size: 0.9rem;
+      color: #718096;
+      margin-bottom: 1rem;
+    }
+
+    /* Quick Actions */
+    .quick-actions {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: center;
+      margin-top: 1rem;
+    }
+
+    /* View Toggle */
+    .view-toggle {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 2rem;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border-radius: 50px;
+      padding: 0.5rem;
+      max-width: 300px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .view-btn {
+      padding: 0.75rem 1.5rem;
+      border: none;
+      background: transparent;
+      color: white;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-weight: 500;
+    }
+
+    .view-btn.active {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .view-btn:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
+  </style>
+</head>
+<body>
+  <!-- Floating Elements -->
+  <div class="floating-elements">
+    <div class="floating-element" style="top: 10%; left: 5%;">🅿️</div>
+    <div class="floating-element" style="top: 20%; right: 10%;">🚗</div>
+    <div class="floating-element" style="bottom: 30%; left: 15%;">📍</div>
+    <div class="floating-element" style="bottom: 20%; right: 5%;">🔧</div>
+  </div>
+
+  <!-- Header -->
+  <header>
+    <div class="header-content">
+      <div class="logo">Parking Slots</div>
+      <nav class="nav-links">
+        <a href="/dashboard">Dashboard</a>
+        <a href="/customers">Customers</a>
+        <a href="/vehicles">Vehicles</a>
+        <a href="/sessions">Sessions</a>
+        <a href="/slots" class="active">Slots</a>
+        <% if (isAdmin) { %>
+          <a href="/admin">Admin</a>
+        <% } %>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <h2>Parking Slots Management</h2>
+
+    <!-- Alert Messages -->
+    <% if (typeof success !== 'undefined') { %>
+      <div class="alert alert-success">
+        <% if (success === 'slot_added') { %>
+          ✅ Parking slot added successfully!
+        <% } else if (success === 'slot_updated') { %>
+          ✅ Slot status updated successfully!
+        <% } else if (success === 'slot_deleted') { %>
+          ✅ Parking slot deleted successfully!
+        <% } %>
+      </div>
+    <% } %>
+
+    <% if (typeof error !== 'undefined') { %>
+      <div class="alert alert-error">
+        <% if (error === 'missing_fields') { %>
+          ❌ Please fill in all required fields.
+        <% } else if (error === 'duplicate_slot') { %>
+          ❌ A slot with this number already exists.
+        <% } else if (error === 'slot_not_found') { %>
+          ❌ Slot not found.
+        <% } else { %>
+          ❌ An error occurred. Please try again.
+        <% } %>
+      </div>
+    <% } %>
+
+    <!-- Stats Section -->
+    <div class="stats-section">
+      <div class="stats-grid">
+        <div class="stat-item">
+          <div class="stat-number"><%= slots.length %></div>
+          <div class="stat-label">Total Slots</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number">
+            <% 
+              const availableSlots = slots.filter(s => !s.is_occupied).length;
+            %>
+            <%= availableSlots %>
+          </div>
+          <div class="stat-label">Available</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number">
+            <% 
+              const occupiedSlots = slots.filter(s => s.is_occupied).length;
+            %>
+            <%= occupiedSlots %>
+          </div>
+          <div class="stat-label">Occupied</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number">
+            <% 
+              const utilization = slots.length > 0 ? Math.round((occupiedSlots / slots.length) * 100) : 0;
+            %>
+            <%= utilization %>%
+          </div>
+          <div class="stat-label">Utilization</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add Slot Form -->
+    <% if (isAdmin) { %>
+      <div class="form-container">
+        <h3 class="form-title">Add New Parking Slot</h3>
+        <form action="/slots/add" method="POST" id="slotForm">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="slot_number">Slot Number *</label>
+              <input type="text" id="slot_number" name="slot_number" required 
+                     placeholder="e.g., A-01, B-12">
+            </div>
+
+            <div class="form-group">
+              <label for="slot_type">Slot Type *</label>
+              <select id="slot_type" name="slot_type" required>
+                <option value="">Select Type</option>
+                <option value="Standard">🚗 Standard</option>
+                <option value="Compact">🔹 Compact</option>
+                <option value="Large">🚚 Large</option>
+                <option value="Motorcycle">🏍️ Motorcycle</option>
+                <option value="Disabled">♿ Disabled</option>
+                <option value="VIP">⭐ VIP</option>
+              </select>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary">
+            <span>➕</span>
+            Add Parking Slot
+          </button>
+        </form>
+      </div>
+
+      <hr>
+    <% } %>
+
+    <!-- View Toggle -->
+    <div class="view-toggle">
+      <button class="view-btn active" onclick="toggleView('grid')">
+        🏢 Grid View
+      </button>
+      <button class="view-btn" onclick="toggleView('table')">
+        📊 Table View
+      </button>
+    </div>
+
+    <!-- Grid View -->
+    <div id="gridView">
+      <div class="slots-grid">
+        <% if (slots.length === 0) { %>
+          <div class="no-data" style="grid-column: 1 / -1;">
+            No parking slots configured. Add your first slot above!
+          </div>
+        <% } else { %>
+          <% slots.forEach(slot => { %>
+            <div class="slot-card <%= slot.is_occupied ? 'occupied' : 'available' %>">
+              <div class="slot-number">
+                <%= slot.slot_number %>
+              </div>
+              <div class="slot-type">
+                <%= slot.slot_type %>
+              </div>
+              <div class="status-badge <%= slot.is_occupied ? 'badge-occupied' : 'badge-available' %>">
+                <%= slot.is_occupied ? 'Occupied' : 'Available' %>
+              </div>
+              
+              <% if (isAdmin) { %>
+                <div class="quick-actions">
+                  <form action="/slots/toggle/<%= slot.slot_id %>" method="POST" style="display:inline;">
+                    <button type="submit" class="btn-sm <%= slot.is_occupied ? 'btn-success' : 'btn-warning' %>">
+                      <span><%= slot.is_occupied ? '🔄' : '🚗' %></span>
+                      <%= slot.is_occupied ? 'Free' : 'Occupy' %>
+                    </button>
+                  </form>
+                  <form action="/slots/delete/<%= slot.slot_id %>" method="POST" style="display:inline;" 
+                        onsubmit="return confirm('Delete slot <%= slot.slot_number %>?')">
+                    <button type="submit" class="btn-sm btn-danger">
+                      <span>🗑️</span>
+                    </button>
+                  </form>
+                </div>
+              <% } %>
+            </div>
+          <% }); %>
+        <% } %>
+      </div>
+    </div>
+
+    <!-- Table View -->
+    <div id="tableView" style="display: none;">
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Slot Number</th>
+              <th>Type</th>
+              <th>Status</th>
+              <% if (isAdmin) { %>
+                <th>Actions</th>
+              <% } %>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (slots.length === 0) { %>
+              <tr>
+                <td colspan="<%= isAdmin ? '4' : '3' %>" class="no-data">
+                  No parking slots configured. Add your first slot above!
+                </td>
+              </tr>
+            <% } else { %>
+              <% slots.forEach(slot => { %>
+                <tr>
+                  <td>
+                    <strong style="font-size: 1.1rem;">
+                      <%= slot.slot_number %>
+                    </strong>
+                  </td>
+                  <td>
+                    <%= slot.slot_type %>
+                  </td>
+                  <td>
+                    <span class="status-badge <%= slot.is_occupied ? 'badge-occupied' : 'badge-available' %>">
+                      <%= slot.is_occupied ? 'Occupied' : 'Available' %>
+                    </span>
+                  </td>
+                  <% if (isAdmin) { %>
+                    <td>
+                      <div class="action-buttons">
+                        <form action="/slots/toggle/<%= slot.slot_id %>" method="POST" style="display:inline;">
+                          <button type="submit" class="btn-sm <%= slot.is_occupied ? 'btn-success' : 'btn-warning' %>">
+                            <span><%= slot.is_occupied ? '🔄' : '🚗' %></span>
+                            <%= slot.is_occupied ? 'Free' : 'Occupy' %>
+                          </button>
+                        </form>
+                        <form action="/slots/delete/<%= slot.slot_id %>" method="POST" style="display:inline;" 
+                              onsubmit="return confirm('Delete slot <%= slot.slot_number %>?')">
+                          <button type="submit" class="btn-sm btn-danger">
+                            <span>🗑️</span>
+                            Delete
+                          </button>
+                        </form>
+                      </div>
+                    </td>
+                  <% } %>
+                </tr>
+              <% }); %>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <p>&copy; 2023 Parking Management System. All rights reserved.</p>
+    <% if (user) { %>
+      <p style="margin-top: 0.5rem; font-size: 0.9rem;">
+        Logged in as: <%= user.username %> 
+        <% if (isAdmin) { %> (Administrator) <% } %>
+        | <a href="/logout" style="color: rgba(255,255,255,0.8);">Logout</a>
+      </p>
+    <% } %>
+  </footer>
+
+  <script>
+    // Add interactive elements
+    document.addEventListener('DOMContentLoaded', function() {
+      const buttons = document.querySelectorAll('.btn');
+      buttons.forEach(button => {
+        button.addEventListener('mouseenter', function() {
+          this.style.transform = 'translateY(-3px)';
+        });
+        
+        button.addEventListener('mouseleave', function() {
+          this.style.transform = 'translateY(0)';
+        });
+      });
+
+      // Add fade-in animation for slot cards
+      const slotCards = document.querySelectorAll('.slot-card');
+      slotCards.forEach((card, index) => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        card.style.transition = 'all 0.5s ease';
+        
+        setTimeout(() => {
+          card.style.opacity = '1';
+          card.style.transform = 'translateY(0)';
+        }, 100 * index);
+      });
+
+      // Add fade-in animation for table rows
+      const tableRows = document.querySelectorAll('tbody tr');
+      tableRows.forEach((row, index) => {
+        row.style.opacity = '0';
+        row.style.transform = 'translateY(20px)';
+        row.style.transition = 'all 0.5s ease';
+        
+        setTimeout(() => {
+          row.style.opacity = '1';
+          row.style.transform = 'translateY(0)';
+        }, 100 * index);
+      });
+
+      // Auto-hide alerts after 5 seconds
+      const alerts = document.querySelectorAll('.alert');
+      alerts.forEach(alert => {
+        setTimeout(() => {
+          alert.style.opacity = '0';
+          alert.style.transition = 'opacity 0.5s ease';
+          setTimeout(() => alert.remove(), 500);
+        }, 5000);
+      });
+
+      // Form validation
+      const slotForm = document.getElementById('slotForm');
+      if (slotForm) {
+        slotForm.addEventListener('submit', function(e) {
+          const slotNumber = document.getElementById('slot_number');
+          const slotType = document.getElementById('slot_type');
+          
+          if (!slotNumber.value.trim() || !slotType.value) {
+            e.preventDefault();
+            alert('Please fill in all required fields.');
+          }
+        });
+      }
+    });
+
+    // View toggle functionality
+    function toggleView(viewType) {
+      const gridView = document.getElementById('gridView');
+      const tableView = document.getElementById('tableView');
+      const viewBtns = document.querySelectorAll('.view-btn');
+      
+      viewBtns.forEach(btn => btn.classList.remove('active'));
+      
+      if (viewType === 'grid') {
+        gridView.style.display = 'block';
+        tableView.style.display = 'none';
+        document.querySelector('.view-btn:nth-child(1)').classList.add('active');
+      } else {
+        gridView.style.display = 'none';
+        tableView.style.display = 'block';
+        document.querySelector('.view-btn:nth-child(2)').classList.add('active');
+      }
+    }
+
+    // Real-time status updates (simulated)
+    function simulateRealTimeUpdates() {
+      // In a real application, this would use WebSockets or AJAX polling
+      console.log('Real-time slot monitoring active');
+    }
+
+    simulateRealTimeUpdates();
+  </script>
+</body>
+</html>

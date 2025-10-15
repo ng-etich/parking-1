@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - Parking System</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      color: #333;
+    }
+
+    .dashboard-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+      min-height: calc(100vh - 140px);
+    }
+
+    .welcome-section {
+      text-align: center;
+      margin-bottom: 3rem;
+      color: white;
+    }
+
+    .welcome-section h2 {
+      font-size: 2.5rem;
+      margin-bottom: 0.5rem;
+      font-weight: 700;
+      background: linear-gradient(45deg, #fff, #e0f7fa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .subtitle {
+      font-size: 1.2rem;
+      opacity: 0.9;
+      font-weight: 300;
+    }
+
+    .role-badge {
+      display: inline-block;
+      background: linear-gradient(135deg, #e74c3c, #c0392b);
+      color: white;
+      padding: 0.5rem 1.5rem;
+      border-radius: 25px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-top: 0.5rem;
+      box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);
+    }
+
+    .operator-badge {
+      background: linear-gradient(135deg, #3498db, #2980b9);
+    }
+
+    .customer-badge {
+      background: linear-gradient(135deg, #2ecc71, #27ae60);
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 3rem;
+    }
+
+    .stat-card {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 15px;
+      padding: 1.5rem;
+      text-align: center;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+      transition: left 0.5s;
+    }
+
+    .stat-card:hover::before {
+      left: 100%;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+    }
+
+    .stat-icon {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .stat-number {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #2c3e50;
+      margin-bottom: 0.5rem;
+    }
+
+    .stat-label {
+      color: #7f8c8d;
+      font-weight: 500;
+    }
+
+    .stat-trend {
+      font-size: 0.8rem;
+      margin-top: 0.5rem;
+      font-weight: 600;
+    }
+
+    .trend-up {
+      color: #2ecc71;
+    }
+
+    .trend-down {
+      color: #e74c3c;
+    }
+
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 15px;
+      padding: 2rem;
+      text-decoration: none;
+      color: inherit;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+      transition: left 0.5s;
+    }
+
+    .card:hover::before {
+      left: 100%;
+    }
+
+    .card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+    }
+
+    .card h3 {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+      color: #2c3e50;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .card p {
+      color: #7f8c8d;
+      line-height: 1.5;
+    }
+
+    .quick-action {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+    }
+
+    .quick-action h3, .quick-action p {
+      color: white;
+    }
+
+    .recent-activity {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 15px;
+      padding: 2rem;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .recent-activity h3 {
+      color: #2c3e50;
+      margin-bottom: 1.5rem;
+      font-size: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .activity-list {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .activity-item {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem;
+      background: rgba(236, 240, 241, 0.5);
+      border-radius: 10px;
+      transition: background 0.3s ease;
+    }
+
+    .activity-item:hover {
+      background: rgba(236, 240, 241, 0.8);
+    }
+
+    .activity-icon {
+      font-size: 1.5rem;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      border-radius: 50%;
+      color: white;
+    }
+
+    .activity-content {
+      flex: 1;
+    }
+
+    .activity-title {
+      font-weight: 600;
+      color: #2c3e50;
+      margin-bottom: 0.25rem;
+    }
+
+    .activity-time {
+      font-size: 0.85rem;
+      color: #7f8c8d;
+    }
+
+    .status-badge {
+      padding: 0.25rem 0.75rem;
+      border-radius: 15px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin-left: 0.5rem;
+    }
+
+    .status-active {
+      background: #e8f5e8;
+      color: #2ecc71;
+    }
+
+    .status-completed {
+      background: #e3f2fd;
+      color: #3498db;
+    }
+
+    .status-pending {
+      background: #fff3e0;
+      color: #f39c12;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 2rem;
+      color: #7f8c8d;
+    }
+
+    .empty-state .icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      opacity: 0.5;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      .dashboard-container {
+        padding: 1rem;
+      }
+
+      .welcome-section h2 {
+        font-size: 2rem;
+      }
+
+      .stats-grid {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+      }
+
+      .cards-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+      }
+
+      .stat-card, .card {
+        padding: 1.25rem;
+      }
+
+      .stat-number {
+        font-size: 1.75rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .welcome-section h2 {
+        font-size: 1.75rem;
+      }
+
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .subtitle {
+        font-size: 1rem;
+      }
+    }
+
+    /* Animation for cards */
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .stat-card, .card {
+      animation: fadeInUp 0.6s ease-out;
+    }
+
+    .stat-card:nth-child(1) { animation-delay: 0.1s; }
+    .stat-card:nth-child(2) { animation-delay: 0.2s; }
+    .stat-card:nth-child(3) { animation-delay: 0.3s; }
+    .stat-card:nth-child(4) { animation-delay: 0.4s; }
+    .card:nth-child(1) { animation-delay: 0.2s; }
+    .card:nth-child(2) { animation-delay: 0.3s; }
+    .card:nth-child(3) { animation-delay: 0.4s; }
+    .card:nth-child(4) { animation-delay: 0.5s; }
+    .card:nth-child(5) { animation-delay: 0.6s; }
+
+    /* Loading animation */
+    .loading {
+      opacity: 0.7;
+      pointer-events: none;
+    }
+
+    .pulse {
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.5; }
+      100% { opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <%- include("_header.ejs") %>
+
+  <main class="dashboard-container">
+    <div class="welcome-section">
+      <h2>Welcome, <%= user.username %> 👋</h2>
+      <p class="subtitle">
+        <% if (isCustomer) { %>
+          Here's your personal parking dashboard
+        <% } else { %>
+          Parking Management System Overview
+        <% } %>
+      </p>
+      <div class="role-badge 
+        <% if (isAdmin) { %>admin-badge<% } %>
+        <% if (isOperator) { %>operator-badge<% } %>
+        <% if (isCustomer) { %>customer-badge<% } %>">
+        <%= user.role.toUpperCase() %>
+      </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="stats-grid">
+      <% if (isAdmin || isOperator) { %>
+        <div class="stat-card">
+          <div class="stat-icon">👥</div>
+          <div class="stat-number" id="stat-customers"><%= stats.totalCustomers || 0 %></div>
+          <div class="stat-label">Total Customers</div>
+          <div class="stat-trend trend-up">+5% this week</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon">🚗</div>
+          <div class="stat-number" id="stat-vehicles"><%= stats.totalVehicles || 0 %></div>
+          <div class="stat-label">Total Vehicles</div>
+          <div class="stat-trend trend-up">+3% today</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon">🅿️</div>
+          <div class="stat-number" id="stat-slots">
+            <%= stats.availableSlots || 0 %>/<%= stats.totalSlots || 0 %>
+          </div>
+          <div class="stat-label">Available Slots</div>
+          <div class="stat-trend">
+            <% if (stats.totalSlots > 0) { %>
+              <%= Math.round((stats.availableSlots / stats.totalSlots) * 100) %>% available
+            <% } %>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon">⏱️</div>
+          <div class="stat-number" id="stat-sessions"><%= stats.activeSessions || 0 %></div>
+          <div class="stat-label">Active Sessions</div>
+          <div class="stat-trend trend-up">
+            Ksh <%= stats.todayRevenue || 0 %> today
+          </div>
+        </div>
+      <% } else { %>
+        <!-- Customer-specific stats -->
+        <div class="stat-card">
+          <div class="stat-icon">🚗</div>
+          <div class="stat-number"><%= stats.totalVehicles || 0 %></div>
+          <div class="stat-label">My Vehicles</div>
+          <div class="stat-trend">
+            <% if (stats.totalVehicles > 0) { %>
+              <%= stats.totalVehicles %> registered
+            <% } else { %>
+              No vehicles yet
+            <% } %>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon">⏱️</div>
+          <div class="stat-number"><%= stats.activeSessions || 0 %></div>
+          <div class="stat-label">Active Parking</div>
+          <div class="stat-trend">
+            <% if (stats.activeSessions > 0) { %>
+              Currently parked
+            <% } else { %>
+              No active sessions
+            <% } %>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon">📅</div>
+          <div class="stat-number"><%= stats.upcomingReservations || 0 %></div>
+          <div class="stat-label">Upcoming Reservations</div>
+          <div class="stat-trend">
+            <% if (stats.upcomingReservations > 0) { %>
+              <%= stats.upcomingReservations %> booked
+            <% } else { %>
+              No reservations
+            <% } %>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon">💰</div>
+          <div class="stat-number">Ksh 0</div>
+          <div class="stat-label">Monthly Spending</div>
+          <div class="stat-trend">View history</div>
+        </div>
+      <% } %>
+    </div>
+
+    <!-- Quick Access Cards -->
+    <div class="cards-grid">
+      <% if (isAdmin || isOperator) { %>
+        <a href="/customers" class="card">
+          <h3>👥 Customers</h3>
+          <p>Manage customer records, view details, and handle customer information</p>
+        </a>
+
+        <a href="/vehicles" class="card">
+          <h3>🚗 Vehicles</h3>
+          <p>View and manage registered vehicles, license plates, and vehicle types</p>
+        </a>
+
+        <a href="/slots" class="card">
+          <h3>🅿️ Parking Slots</h3>
+          <p>Monitor slot availability, assign slots, and manage parking space</p>
+        </a>
+
+        <a href="/sessions" class="card">
+          <h3>⏱️ Sessions</h3>
+          <p>Track active parking sessions, start/end sessions, and view history</p>
+        </a>
+
+        <a href="/reservations" class="card">
+          <h3>📅 Reservations</h3>
+          <p>Manage bookings, confirm reservations, and handle scheduling</p>
+        </a>
+
+        <% if (isAdmin) { %>
+          <a href="/admin" class="card">
+            <h3>⚙️ System Settings</h3>
+            <p>System administration, user management, and advanced settings</p>
+          </a>
+        <% } %>
+      <% } else { %>
+        <!-- Customer-specific quick actions -->
+        <a href="/vehicles" class="card">
+          <h3>🚗 My Vehicles</h3>
+          <p>Manage your registered vehicles and license plates</p>
+        </a>
+
+        <a href="/reservations" class="card">
+          <h3>📅 My Reservations</h3>
+          <p>View and manage your parking reservations</p>
+        </a>
+
+        <a href="/sessions" class="card quick-action">
+          <h3>🅿️ Park Now</h3>
+          <p>Start a new parking session immediately</p>
+        </a>
+
+        <a href="/reservations" class="card quick-action">
+          <h3>📋 Book Slot</h3>
+          <p>Reserve a parking slot for later use</p>
+        </a>
+
+        <a href="/profile" class="card">
+          <h3>👤 My Profile</h3>
+          <p>Update your personal information and preferences</p>
+        </a>
+
+        <div class="card">
+          <h3>📞 Support</h3>
+          <p>Get help with parking services and report issues</p>
+        </div>
+      <% } %>
+    </div>
+
+    <!-- Recent Activity Section -->
+    <div class="recent-activity">
+      <h3>📊 Recent Activity</h3>
+      <div class="activity-list" id="activity-list">
+        <% if (recentActivity && recentActivity.length > 0) { %>
+          <% recentActivity.slice(0, 8).forEach(activity => { %>
+            <div class="activity-item">
+              <div class="activity-icon">
+                <% if (activity.activity_type === 'parking_session') { %>
+                  🚗
+                <% } else if (activity.activity_type === 'reservation') { %>
+                  📅
+                <% } else { %>
+                  ℹ️
+                <% } %>
+              </div>
+              <div class="activity-content">
+                <div class="activity-title">
+                  <% if (activity.activity_type === 'parking_session') { %>
+                    Vehicle <%= activity.license_plate %> 
+                    <% if (activity.exit_time) { %>
+                      exited <%= activity.slot_number %>
+                    <% } else { %>
+                      parked in <%= activity.slot_number %>
+                    <% } %>
+                    <span class="status-badge <%= activity.exit_time ? 'status-completed' : 'status-active' %>">
+                      <%= activity.exit_time ? 'Completed' : 'Active' %>
+                    </span>
+                  <% } else if (activity.activity_type === 'reservation') { %>
+                    Reservation for <%= activity.license_plate %> 
+                    at <%= activity.slot_number %>
+                    <span class="status-badge status-pending">Upcoming</span>
+                  <% } else { %>
+                    System activity
+                  <% } %>
+                </div>
+                <div class="activity-time">
+                  <% if (activity.activity_type === 'parking_session') { %>
+                    <%= new Date(activity.entry_time).toLocaleString() %>
+                    <% if (activity.total_fee > 0) { %>
+                      • Ksh <%= activity.total_fee %>
+                    <% } %>
+                  <% } else if (activity.activity_type === 'reservation') { %>
+                    <%= new Date(activity.start_time).toLocaleString() %>
+                  <% } %>
+                  <% if (activity.customer_name && (isAdmin || isOperator)) { %>
+                    • <%= activity.customer_name %>
+                  <% } %>
+                </div>
+              </div>
+            </div>
+          <% }) %>
+        <% } else if (recentSessions && recentSessions.length > 0) { %>
+          <!-- Fallback for customer recent sessions -->
+          <% recentSessions.slice(0, 5).forEach(session => { %>
+            <div class="activity-item">
+              <div class="activity-icon">🚗</div>
+              <div class="activity-content">
+                <div class="activity-title">
+                  Vehicle <%= session.license_plate %> parked in <%= session.slot_number %>
+                  <span class="status-badge <%= session.exit_time ? 'status-completed' : 'status-active' %>">
+                    <%= session.exit_time ? 'Completed' : 'Active' %>
+                  </span>
+                </div>
+                <div class="activity-time">
+                  <%= new Date(session.entry_time).toLocaleString() %>
+                  <% if (session.total_fee > 0) { %>
+                    • Ksh <%= session.total_fee %>
+                  <% } %>
+                </div>
+              </div>
+            </div>
+          <% }) %>
+        <% } else { %>
+          <div class="empty-state">
+            <div class="icon">📊</div>
+            <p>No recent activity</p>
+            <p style="font-size: 0.9rem; margin-top: 0.5rem;">
+              <% if (isCustomer) { %>
+                Your parking sessions will appear here
+              <% } else { %>
+                System activities will appear here
+              <% } %>
+            </p>
+          </div>
+        <% } %>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <%- include("_footer.ejs") %>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Add click animation to cards
+      const cards = document.querySelectorAll('.card');
+      cards.forEach(card => {
+        card.addEventListener('click', function(e) {
+          if (this.getAttribute('href')) {
+            this.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+              this.style.transform = '';
+            }, 150);
+          }
+        });
+      });
+
+      // Auto-refresh stats every 30 seconds (for admin/operator)
+      <% if (isAdmin || isOperator) { %>
+      setInterval(() => {
+        refreshStats();
+      }, 30000);
+      <% } %>
+
+      // Add real-time updates for active sessions
+      function refreshStats() {
+        console.log('Refreshing dashboard stats...');
+        // You can implement AJAX calls here to update stats without page reload
+        // Example:
+        // fetch('/api/dashboard/stats')
+        //   .then(response => response.json())
+        //   .then(data => updateStats(data));
+      }
+
+      function updateStats(data) {
+        // Update stat numbers with animation
+        const statElements = {
+          'customers': document.getElementById('stat-customers'),
+          'vehicles': document.getElementById('stat-vehicles'),
+          'slots': document.getElementById('stat-slots'),
+          'sessions': document.getElementById('stat-sessions')
+        };
+
+        for (const [key, element] of Object.entries(statElements)) {
+          if (element && data[key] !== undefined) {
+            // Add pulse animation
+            element.classList.add('pulse');
+            setTimeout(() => {
+              element.textContent = data[key];
+              element.classList.remove('pulse');
+            }, 300);
+          }
+        }
+      }
+
+      // Add loading states for better UX
+      const links = document.querySelectorAll('a[href]');
+      links.forEach(link => {
+        link.addEventListener('click', function(e) {
+          if (this.getAttribute('href').startsWith('/')) {
+            this.classList.add('loading');
+          }
+        });
+      });
+
+      // Add keyboard shortcuts
+      document.addEventListener('keydown', function(e) {
+        if (e.ctrlKey || e.metaKey) {
+          switch(e.key) {
+            case '1':
+              e.preventDefault();
+              window.location.href = '/dashboard';
+              break;
+            case '2':
+              e.preventDefault();
+              window.location.href = '/vehicles';
+              break;
+            case '3':
+              e.preventDefault();
+              window.location.href = '/sessions';
+              break;
+            case '4':
+              e.preventDefault();
+              window.location.href = '/reservations';
+              break;
+          }
+        }
+      });
+
+      // Add service worker registration for offline functionality
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js')
+          .then(registration => console.log('SW registered'))
+          .catch(error => console.log('SW registration failed'));
+      }
+    });
+
+    // Add online/offline detection
+    window.addEventListener('online', function() {
+      showNotification('Connection restored', 'success');
+    });
+
+    window.addEventListener('offline', function() {
+      showNotification('You are offline', 'warning');
+    });
+
+    function showNotification(message, type) {
+      // Simple notification implementation
+      const notification = document.createElement('div');
+      notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 1rem 1.5rem;
+        border-radius: 10px;
+        color: white;
+        font-weight: 600;
+        z-index: 1000;
+        background: ${type === 'success' ? '#2ecc71' : '#e74c3c'};
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+      `;
+      notification.textContent = message;
+      document.body.appendChild(notification);
+      
+      setTimeout(() => {
+        notification.remove();
+      }, 3000);
+    }
+  </script>
+</body>
+</html>
