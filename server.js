@@ -1064,6 +1064,194 @@ app.get("/customers", requireAuth, (req, res) => {
   }
 });
 
+// ===== Payment Routes =====
+
+// Payment processing route
+app.get("/payment/process", requireAuth, (req, res) => {
+    const { session_id, method, amount } = req.query;
+    
+    if (!session_id) {
+        return res.redirect("/user/sessions?error=invalid_session");
+    }
+
+    // Verify the session belongs to the current user
+    const verifyQuery = `
+        SELECT ps.*, v.customer_id 
+        FROM ParkingSession ps
+        JOIN Vehicle v ON ps.vehicle_id = v.vehicle_id
+        WHERE ps.session_id = ? AND v.customer_id = ?
+    `;
+    
+    db.query(verifyQuery, [session_id, req.session.user.id], (err, results) => {
+        if (err || results.length === 0) {
+            return res.redirect("/user/sessions?error=session_not_found");
+        }
+
+        const session = results[0];
+        
+        // Check if session is completed and has a fee
+        if (!session.exit_time || !session.total_fee) {
+            return res.redirect("/user/sessions?error=session_not_completed");
+        }
+
+        // Check if already paid
+        if (session.payment_status === 'completed') {
+            return res.redirect("/user/sessions?error=already_paid");
+        }
+
+        // Update session payment status
+        db.query(
+            "UPDATE ParkingSession SET payment_status = 'completed' WHERE session_id = ?",
+            [session_id],
+            (err) => {
+                if (err) {
+                    console.error("Payment update error:", err);
+                    return res.redirect("/user/sessions?error=payment_failed");
+                }
+                
+                // Generate transaction ID
+                const transaction_id = 'TXN_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                
+                // Render payment confirmation page
+                res.render("payment/confirmation", {
+                    session_id,
+                    payment_method: method,
+                    amount: session.total_fee,
+                    transaction_id: transaction_id,
+                    currentPage: "sessions",
+                    success: true
+                });
+            }
+        );
+    });
+});
+
+// Payment confirmation page
+app.get("/payment/confirmation", requireAuth, (req, res) => {
+    res.render("payment/confirmation", {
+        ...req.query,
+        currentPage: "sessions"
+    });
+});
+
+// Add a route to handle payment form submission (POST)
+app.post("/payment/process", requireAuth, (req, res) => {
+    const { session_id, payment_method, phone, card_number } = req.body;
+    
+    // Validate required fields
+    if (!session_id || !payment_method) {
+        return res.redirect("/user/sessions?error=missing_payment_details");
+    }
+
+    // Verify session ownership and validity
+    const verifyQuery = `
+        SELECT ps.*, v.license_plate, ps2.slot_number
+        FROM ParkingSession ps
+        JOIN Vehicle v ON ps.vehicle_id = v.vehicle_id
+        JOIN ParkingSlot ps2 ON ps.slot_id = ps2.slot_id
+        WHERE ps.session_id = ? AND v.customer_id = ? AND ps.exit_time IS NOT NULL
+    `;
+    
+    db.query(verifyQuery, [session_id, req.session.user.id], (err, results) => {
+        if (err || results.length === 0) {
+            return res.redirect("/user/sessions?error=invalid_session");
+        }
+
+        const session = results[0];
+        
+        // Process payment based on method
+        if (payment_method === 'mpesa') {
+            if (!phone || !/^07[0-9]{8}$/.test(phone)) {
+                return res.redirect("/user/sessions?error=invalid_phone");
+            }
+            // Here you would integrate with M-Pesa API
+            console.log(`Processing M-Pesa payment for phone: ${phone}, amount: ${session.total_fee}`);
+        } else if (payment_method === 'card') {
+            if (!card_number) {
+                return res.redirect("/user/sessions?error=invalid_card");
+            }
+            // Here you would integrate with card payment API
+            console.log(`Processing card payment, amount: ${session.total_fee}`);
+        }
+        
+        // Update payment status
+        db.query(
+            "UPDATE ParkingSession SET payment_status = 'completed' WHERE session_id = ?",
+            [session_id],
+            (err) => {
+                if (err) {
+                    console.error("Payment update error:", err);
+                    return res.redirect("/user/sessions?error=payment_failed");
+                }
+                
+                const transaction_id = 'TXN_' + Date.now();
+                res.redirect(`/payment/confirmation?session_id=${session_id}&method=${payment_method}&amount=${session.total_fee}&transaction_id=${transaction_id}`);
+            }
+        );
+    });
+});
+
+
+// Reservation Payment Routes
+// Reservation Payment Routes - UPDATED (without payment_status)
+// Reservation Payment Routes - UPDATED (using correct columns)
+app.get("/reservations/payment/process", requireAuth, (req, res) => {
+    const { reservation_id, method, amount } = req.query;
+    
+    if (!reservation_id) {
+        return res.redirect("/user/reservations?error=invalid_reservation");
+    }
+
+    // Verify the reservation belongs to the current user
+    const verifyQuery = `
+        SELECT r.*, v.license_plate, ps.slot_number
+        FROM Reservation r
+        JOIN Vehicle v ON r.vehicle_id = v.vehicle_id
+        JOIN ParkingSlot ps ON r.slot_id = ps.slot_id
+        WHERE r.reservation_id = ? AND r.customer_id = ?
+    `;
+    
+    db.query(verifyQuery, [reservation_id, req.session.user.id], (err, results) => {
+        if (err || results.length === 0) {
+            return res.redirect("/user/reservations?error=reservation_not_found");
+        }
+
+        const reservation = results[0];
+        
+        // Update reservation status to 'Confirmed' and set cost
+        db.query(
+            "UPDATE Reservation SET status = 'Confirmed', cost = ? WHERE reservation_id = ?",
+            [amount, reservation_id],
+            (err) => {
+                if (err) {
+                    console.error("Payment update error:", err);
+                    return res.redirect("/user/reservations?error=payment_failed");
+                }
+                
+                // Generate transaction ID
+                const transaction_id = 'RES_TXN_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                
+                // Redirect back to reservations with success message
+                res.redirect("/user/reservations?success=payment_completed");
+            }
+        );
+    });
+});
+
+// Update the reservations query to include payment status and amount
+// In both /user/reservations and /admin/reservations routes, modify the query to:
+const query = `
+    SELECT r.*, c.full_name AS customer_name, v.license_plate, ps.slot_number,
+           COALESCE(r.payment_status, 'pending') as payment_status,
+           r.amount
+    FROM Reservation r
+    JOIN Customer c ON r.customer_id = c.customer_id
+    JOIN Vehicle v ON r.vehicle_id = v.vehicle_id
+    JOIN ParkingSlot ps ON r.slot_id = ps.slot_id
+    WHERE r.customer_id = ?
+    ORDER BY r.start_time DESC
+`;
+
 // Add Slot Route - UPDATED
 app.post('/slots/add', requireRole(['admin', 'operator']), (req, res) => {
     const { slot_number, slot_type, slot_location, initial_status, slot_notes } = req.body;

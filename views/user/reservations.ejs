@@ -10,6 +10,13 @@
         .sidebar { position: fixed; top: 0; bottom: 0; left: 0; z-index: 100; padding: 48px 0 0; box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1); }
         .sidebar-sticky { position: relative; top: 0; padding-top: .5rem; overflow-x: hidden; overflow-y: auto; }
         main { padding-top: 48px; }
+        .reservation-card { transition: transform 0.2s; }
+        .reservation-card:hover { transform: translateY(-2px); }
+        .payment-pending { border-left: 4px solid #ffc107 !important; }
+        .payment-completed { border-left: 4px solid #198754 !important; }
+        .cancelled-reservation { border-left: 4px solid #dc3545 !important; opacity: 0.7; }
+        .price-tag { font-size: 1.1rem; font-weight: bold; color: #198754; }
+        .duration-badge { background: #e9ecef; color: #495057; }
     </style>
 </head>
 <body>
@@ -22,16 +29,25 @@
             <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
                 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
                     <h1 class="h2">My Reservations</h1>
-                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addReservationModal">
-                        <i class="fas fa-plus me-1"></i>New Reservation
-                    </button>
+                    <div>
+                        <button class="btn btn-outline-secondary me-2" onclick="window.location.reload()">
+                            <i class="fas fa-sync-alt me-1"></i>Refresh
+                        </button>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addReservationModal">
+                            <i class="fas fa-plus me-1"></i>New Reservation
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Server-side URL parameter handling -->
                 <% if (success) { %>
                     <div class="alert alert-success alert-dismissible fade show" role="alert">
                         <% if (success === 'reservation_created') { %>
-                            Reservation created successfully!
+                            <i class="fas fa-check-circle me-2"></i>Reservation created successfully!
+                        <% } else if (success === 'payment_completed') { %>
+                            <i class="fas fa-check-circle me-2"></i>Payment completed successfully!
+                        <% } else if (success === 'reservation_cancelled') { %>
+                            <i class="fas fa-check-circle me-2"></i>Reservation cancelled successfully!
                         <% } %>
                         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
@@ -39,12 +55,19 @@
 
                 <% if (error) { %>
                     <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <i class="fas fa-exclamation-circle me-2"></i>
                         <% if (error === 'missing_fields') { %>
                             Please fill all required fields!
                         <% } else if (error === 'duplicate_reservation') { %>
                             Reservation already exists for this slot and time!
                         <% } else if (error === 'reservation_failed') { %>
                             Failed to create reservation. Please try again!
+                        <% } else if (error === 'payment_failed') { %>
+                            Payment failed. Please try again!
+                        <% } else if (error === 'cancellation_failed') { %>
+                            Failed to cancel reservation. Please try again!
+                        <% } else if (error === 'invalid_reservation') { %>
+                            Invalid reservation selected!
                         <% } %>
                         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
@@ -54,24 +77,84 @@
                     <% if (reservations.length > 0) { %>
                         <% reservations.forEach(reservation => { %>
                             <div class="col-md-6 col-lg-4 mb-4">
-                                <div class="card h-100 
+                                <div class="card h-100 reservation-card 
                                     <% const now = new Date(); %>
                                     <% const start = new Date(reservation.start_time); %>
                                     <% const end = new Date(reservation.end_time); %>
-                                    <%= now < start ? 'border-info' : now >= start && now <= end ? 'border-success' : 'border-secondary' %>">
-                                    <div class="card-body">
+                                    <% const isUpcoming = now < start; %>
+                                    <% const isActive = now >= start && now <= end; %>
+                                    <% const isCompleted = now > end; %>
+                                    <% const isCancelled = reservation.status === 'cancelled'; %>
+                                    <%= isCancelled ? 'cancelled-reservation' : isUpcoming ? 'border-info' : isActive ? 'border-success' : 'border-secondary' %>
+                                    <%= reservation.payment_status === 'pending' ? 'payment-pending' : reservation.payment_status === 'completed' ? 'payment-completed' : '' %>">
+                                    <div class="card-body d-flex flex-column">
                                         <div class="d-flex justify-content-between align-items-start mb-2">
                                             <h5 class="card-title">Slot <%= reservation.slot_number %></h5>
-                                            <span class="badge 
-                                                <%= now < start ? 'bg-info' : now >= start && now <= end ? 'bg-success' : 'bg-secondary' %>">
-                                                <%= now < start ? 'Upcoming' : now >= start && now <= end ? 'Active' : 'Completed' %>
-                                            </span>
+                                            <div class="text-end">
+                                                <span class="badge 
+                                                    <%= isCancelled ? 'bg-danger' : isUpcoming ? 'bg-info' : isActive ? 'bg-success' : 'bg-secondary' %>">
+                                                    <%= isCancelled ? 'Cancelled' : isUpcoming ? 'Upcoming' : isActive ? 'Active' : 'Completed' %>
+                                                </span>
+                                                <div class="price-tag mt-1">
+                                                    KSh <%= (reservation.amount || 0).toLocaleString() %>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <p class="card-text">
-                                            <strong>Vehicle:</strong> <%= reservation.license_plate %><br>
-                                            <strong>From:</strong> <%= new Date(reservation.start_time).toLocaleString() %><br>
-                                            <strong>To:</strong> <%= new Date(reservation.end_time).toLocaleString() %>
+                                        
+                                        <p class="card-text flex-grow-1">
+                                            <strong><i class="fas fa-car me-1"></i>Vehicle:</strong> <%= reservation.license_plate %><br>
+                                            <strong><i class="fas fa-play me-1"></i>From:</strong> <%= new Date(reservation.start_time).toLocaleString() %><br>
+                                            <strong><i class="fas fa-stop me-1"></i>To:</strong> <%= new Date(reservation.end_time).toLocaleString() %><br>
+                                            
+                                            <% if (reservation.duration_hours) { %>
+                                                <span class="badge duration-badge">
+                                                    <i class="fas fa-clock me-1"></i><%= reservation.duration_hours %> hours
+                                                </span>
+                                            <% } %>
                                         </p>
+                                        
+                                        <!-- Action Buttons -->
+                                        <div class="mt-auto pt-3 border-top">
+                                            <% if (isCancelled) { %>
+                                                <div class="text-center text-muted">
+                                                    <i class="fas fa-ban me-1"></i>Reservation Cancelled
+                                                </div>
+                                            <% } else if (reservation.payment_status === 'completed') { %>
+                                                <div class="text-center">
+                                                    <span class="badge bg-success me-2">
+                                                        <i class="fas fa-check me-1"></i>Paid
+                                                    </span>
+                                                    <% if (isUpcoming) { %>
+                                                        <button class="btn btn-outline-danger btn-sm mt-2 cancel-btn"
+                                                                data-reservation-id="<%= reservation.reservation_id %>">
+                                                            <i class="fas fa-times me-1"></i>Cancel
+                                                        </button>
+                                                    <% } %>
+                                                </div>
+                                            <% } else { %>
+                                                <div class="d-grid gap-2">
+                                                    <!-- Payment Button for unpaid reservations -->
+                                                    <button class="btn btn-primary btn-sm payment-btn" 
+                                                            data-reservation-id="<%= reservation.reservation_id %>"
+                                                            data-amount="<%= reservation.amount || 0 %>"
+                                                            data-vehicle="<%= reservation.license_plate %>"
+                                                            data-slot="<%= reservation.slot_number %>"
+                                                            data-start-time="<%= reservation.start_time %>"
+                                                            data-end-time="<%= reservation.end_time %>">
+                                                        <i class="fas fa-credit-card me-1"></i>
+                                                        Pay KSh <%= (reservation.amount || 0).toLocaleString() %>
+                                                    </button>
+                                                    
+                                                    <!-- Cancel Button for upcoming reservations -->
+                                                    <% if (isUpcoming) { %>
+                                                        <button class="btn btn-outline-danger btn-sm cancel-btn"
+                                                                data-reservation-id="<%= reservation.reservation_id %>">
+                                                            <i class="fas fa-times me-1"></i>Cancel Reservation
+                                                        </button>
+                                                    <% } %>
+                                                </div>
+                                            <% } %>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -93,56 +176,388 @@
 
     <!-- Add Reservation Modal -->
     <div class="modal fade" id="addReservationModal" tabindex="-1">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">New Parking Reservation</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <form action="/reservations/add" method="POST">
+                <form action="/reservations/add" method="POST" id="reservationForm">
                     <div class="modal-body">
-                        <div class="mb-3">
-                            <label class="form-label">Select Vehicle *</label>
-                            <select class="form-control" name="vehicle_id" required>
-                                <option value="">Choose Your Vehicle</option>
-                                <% vehicles.forEach(vehicle => { %>
-                                    <option value="<%= vehicle.vehicle_id %>">
-                                        <%= vehicle.license_plate %> (<%= vehicle.type %>)
-                                    </option>
-                                <% }); %>
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Parking Slot *</label>
-                            <select class="form-control" name="slot_id" required>
-                                <option value="">Choose Parking Slot</option>
-                                <% slots.forEach(slot => { %>
-                                    <option value="<%= slot.slot_id %>">
-                                        Slot <%= slot.slot_number %>
-                                    </option>
-                                <% }); %>
-                            </select>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Select Vehicle *</label>
+                                <select class="form-control" name="vehicle_id" required id="vehicleSelect">
+                                    <option value="">Choose Your Vehicle</option>
+                                    <% vehicles.forEach(vehicle => { %>
+                                        <option value="<%= vehicle.vehicle_id %>" data-type="<%= vehicle.type %>">
+                                            <%= vehicle.license_plate %> (<%= vehicle.type %>)
+                                        </option>
+                                    <% }); %>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Parking Slot *</label>
+                                <select class="form-control" name="slot_id" required id="slotSelect">
+                                    <option value="">Choose Parking Slot</option>
+                                    <% slots.forEach(slot => { %>
+                                        <option value="<%= slot.slot_id %>" data-type="<%= slot.slot_type %>" data-rate="<%= slot.hourly_rate || 100 %>">
+                                            Slot <%= slot.slot_number %> - <%= slot.slot_type %> (KSh <%= slot.hourly_rate || 100 %>/hour)
+                                        </option>
+                                    <% }); %>
+                                </select>
+                            </div>
                         </div>
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Start Time *</label>
-                                <input type="datetime-local" class="form-control" name="start_time" required>
+                                <input type="datetime-local" class="form-control" name="start_time" required id="startTime" min="<%= new Date().toISOString().slice(0,16) %>">
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">End Time *</label>
-                                <input type="datetime-local" class="form-control" name="end_time" required>
+                                <input type="datetime-local" class="form-control" name="end_time" required id="endTime">
                             </div>
+                        </div>
+                        
+                        <!-- Price Calculation -->
+                        <div class="alert alert-info" id="priceCalculation" style="display: none;">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>Estimated Cost:</strong>
+                                    <span id="calculatedAmount">KSh 0</span>
+                                    <br>
+                                    <small id="calculationDetails" class="text-muted"></small>
+                                </div>
+                                <i class="fas fa-calculator fa-2x"></i>
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-warning">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Payment is required to confirm your reservation. You can cancel up to 1 hour before start time.
                         </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-primary">Create Reservation</button>
+                        <button type="submit" class="btn btn-primary" id="submitReservation">
+                            <i class="fas fa-calendar-plus me-1"></i>Create Reservation
+                        </button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 
+    <!-- Payment Modal -->
+    <div class="modal fade" id="paymentModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Reservation Payment</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-credit-card fa-3x text-primary mb-3"></i>
+                        <h4>Reservation Payment</h4>
+                        <p class="text-muted">Reservation #<span id="paymentReservationId"></span></p>
+                    </div>
+                    
+                    <div class="payment-details mb-4 p-3 bg-light rounded">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Amount Due:</span>
+                            <strong id="paymentAmount" class="fs-5">KSh 0</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Vehicle:</span>
+                            <span id="paymentVehicle">-</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Slot:</span>
+                            <span id="paymentSlot">-</span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span>Reservation Period:</span>
+                            <span id="paymentPeriod" class="text-end">-</span>
+                        </div>
+                    </div>
+
+                    <form id="paymentForm">
+                        <div class="mb-3">
+                            <label class="form-label">Payment Method *</label>
+                            <select class="form-select" id="paymentMethod" required>
+                                <option value="">Select Payment Method</option>
+                                <option value="mpesa">M-Pesa</option>
+                                <option value="card">Credit/Debit Card</option>
+                                <option value="cash">Cash</option>
+                            </select>
+                        </div>
+
+                        <!-- M-Pesa Payment Fields -->
+                        <div id="mpesaFields" class="payment-method-fields" style="display: none;">
+                            <div class="mb-3">
+                                <label class="form-label">Phone Number *</label>
+                                <input type="tel" class="form-control" placeholder="07XXXXXXXX" 
+                                       pattern="[0-9]{10}" maxlength="10" id="mpesaPhone" required>
+                                <div class="form-text">Enter your M-Pesa registered phone number</div>
+                            </div>
+                        </div>
+
+                        <!-- Card Payment Fields -->
+                        <div id="cardFields" class="payment-method-fields" style="display: none;">
+                            <div class="mb-3">
+                                <label class="form-label">Card Number *</label>
+                                <input type="text" class="form-control" placeholder="1234 5678 9012 3456" 
+                                       maxlength="19" id="cardNumber" required>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Expiry Date *</label>
+                                    <input type="text" class="form-control" placeholder="MM/YY" 
+                                           maxlength="5" id="cardExpiry" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">CVV *</label>
+                                    <input type="text" class="form-control" placeholder="123" 
+                                           maxlength="3" id="cardCVV" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Cash Payment Fields -->
+                        <div id="cashFields" class="payment-method-fields" style="display: none;">
+                            <div class="alert alert-warning">
+                                <i class="fas fa-info-circle me-2"></i>
+                                Please visit the parking attendant to complete cash payment.
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="processPaymentBtn">
+                        <i class="fas fa-lock me-1"></i>Process Payment
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cancel Confirmation Modal -->
+    <div class="modal fade" id="cancelModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Cancel Reservation</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                        <h4>Confirm Cancellation</h4>
+                    </div>
+                    <p>Are you sure you want to cancel this reservation? This action cannot be undone.</p>
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        If you've already paid, a refund will be processed within 3-5 business days.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Keep Reservation</button>
+                    <button type="button" class="btn btn-danger" id="confirmCancelBtn">
+                        <i class="fas fa-times me-1"></i>Cancel Reservation
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let currentReservationId = null;
+        let currentReservationData = null;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Auto-dismiss alerts
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(alert => {
+                setTimeout(() => {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                }, 5000);
+            });
+
+            // Payment button click handlers
+            document.querySelectorAll('.payment-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    currentReservationId = this.dataset.reservationId;
+                    currentReservationData = {
+                        amount: this.dataset.amount,
+                        vehicle: this.dataset.vehicle,
+                        slot: this.dataset.slot,
+                        startTime: this.dataset.startTime,
+                        endTime: this.dataset.endTime
+                    };
+                    
+                    showPaymentModal(currentReservationData);
+                });
+            });
+
+            // Cancel button click handlers
+            document.querySelectorAll('.cancel-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    currentReservationId = this.dataset.reservationId;
+                    showCancelModal();
+                });
+            });
+
+            // Payment method change handler
+            document.getElementById('paymentMethod').addEventListener('change', function() {
+                // Hide all payment method fields
+                document.querySelectorAll('.payment-method-fields').forEach(field => {
+                    field.style.display = 'none';
+                });
+
+                // Show selected payment method fields
+                const selectedMethod = this.value;
+                if (selectedMethod) {
+                    document.getElementById(selectedMethod + 'Fields').style.display = 'block';
+                }
+            });
+
+            // Process payment button
+            document.getElementById('processPaymentBtn').addEventListener('click', processPayment);
+
+            // Confirm cancel button
+            document.getElementById('confirmCancelBtn').addEventListener('click', confirmCancellation);
+
+            // Price calculation for new reservation
+            const startTimeInput = document.getElementById('startTime');
+            const endTimeInput = document.getElementById('endTime');
+            const slotSelect = document.getElementById('slotSelect');
+
+            if (startTimeInput && endTimeInput && slotSelect) {
+                startTimeInput.addEventListener('change', calculatePrice);
+                endTimeInput.addEventListener('change', calculatePrice);
+                slotSelect.addEventListener('change', calculatePrice);
+            }
+
+            // Set minimum end time based on start time
+            if (startTimeInput) {
+                startTimeInput.addEventListener('change', function() {
+                    endTimeInput.min = this.value;
+                    if (endTimeInput.value && endTimeInput.value < this.value) {
+                        endTimeInput.value = '';
+                    }
+                });
+            }
+        });
+
+        function calculatePrice() {
+            const startTime = document.getElementById('startTime').value;
+            const endTime = document.getElementById('endTime').value;
+            const selectedSlot = document.getElementById('slotSelect').selectedOptions[0];
+            
+            if (!startTime || !endTime || !selectedSlot || !selectedSlot.dataset.rate) {
+                document.getElementById('priceCalculation').style.display = 'none';
+                return;
+            }
+
+            const start = new Date(startTime);
+            const end = new Date(endTime);
+            const durationHours = (end - start) / (1000 * 60 * 60);
+            
+            if (durationHours <= 0) {
+                document.getElementById('priceCalculation').style.display = 'none';
+                return;
+            }
+
+            const hourlyRate = parseFloat(selectedSlot.dataset.rate);
+            const totalAmount = Math.ceil(durationHours) * hourlyRate; // Round up to nearest hour
+
+            document.getElementById('calculatedAmount').textContent = 'KSh ' + totalAmount.toLocaleString();
+            document.getElementById('calculationDetails').textContent = 
+                `(${Math.ceil(durationHours)} hours × KSh ${hourlyRate}/hour)`;
+            document.getElementById('priceCalculation').style.display = 'block';
+        }
+
+        function showPaymentModal(reservationData) {
+            document.getElementById('paymentReservationId').textContent = currentReservationId;
+            document.getElementById('paymentAmount').textContent = 'KSh ' + parseFloat(reservationData.amount || 0).toLocaleString();
+            document.getElementById('paymentVehicle').textContent = reservationData.vehicle;
+            document.getElementById('paymentSlot').textContent = 'Slot ' + reservationData.slot;
+            
+            const startTime = new Date(reservationData.startTime).toLocaleString();
+            const endTime = new Date(reservationData.endTime).toLocaleString();
+            document.getElementById('paymentPeriod').textContent = `${startTime} to ${endTime}`;
+
+            // Reset form
+            document.getElementById('paymentForm').reset();
+            document.querySelectorAll('.payment-method-fields').forEach(field => {
+                field.style.display = 'none';
+            });
+
+            const paymentModal = new bootstrap.Modal(document.getElementById('paymentModal'));
+            paymentModal.show();
+        }
+
+        function showCancelModal() {
+            const cancelModal = new bootstrap.Modal(document.getElementById('cancelModal'));
+            cancelModal.show();
+        }
+
+        function processPayment() {
+            const paymentMethod = document.getElementById('paymentMethod').value;
+            const processBtn = document.getElementById('processPaymentBtn');
+            
+            if (!paymentMethod) {
+                alert('Please select a payment method');
+                return;
+            }
+
+            // Validate specific payment methods
+            if (paymentMethod === 'mpesa') {
+                const phone = document.getElementById('mpesaPhone').value;
+                if (!phone || !/^07[0-9]{8}$/.test(phone)) {
+                    alert('Please enter a valid M-Pesa phone number (07XXXXXXXX)');
+                    return;
+                }
+            } else if (paymentMethod === 'card') {
+                const cardNumber = document.getElementById('cardNumber').value;
+                const cardExpiry = document.getElementById('cardExpiry').value;
+                const cardCVV = document.getElementById('cardCVV').value;
+                
+                if (!cardNumber || !cardExpiry || !cardCVV) {
+                    alert('Please fill all card details');
+                    return;
+                }
+            }
+
+            // Disable button and show loading
+            processBtn.disabled = true;
+            processBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Processing...';
+
+            // Simulate payment processing
+            setTimeout(() => {
+                completePayment(paymentMethod);
+            }, 2000);
+        }
+
+        function completePayment(paymentMethod) {
+            // Redirect to payment confirmation page
+            window.location.href = `/reservations/payment/process?reservation_id=${currentReservationId}&method=${paymentMethod}&amount=${currentReservationData.amount || 0}`;
+        }
+
+        function confirmCancellation() {
+            const cancelBtn = document.getElementById('confirmCancelBtn');
+            
+            // Disable button and show loading
+            cancelBtn.disabled = true;
+            cancelBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Cancelling...';
+
+            // Redirect to cancellation endpoint
+            window.location.href = `/reservations/cancel/${currentReservationId}`;
+        }
+    </script>
 </body>
 </html>

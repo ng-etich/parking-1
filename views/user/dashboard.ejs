@@ -3,10 +3,23 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard - Parking System</title>
+  <title>Dashboard - SmartPark</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
   <style>
+    :root {
+      --primary: #4361ee;
+      --primary-dark: #3a56d4;
+      --secondary: #7209b7;
+      --success: #4cc9f0;
+      --info: #4895ef;
+      --warning: #f72585;
+      --light: #f8f9fa;
+      --dark: #212529;
+      --gray: #6c757d;
+      --border: #e9ecef;
+    }
+
     * {
       margin: 0;
       padding: 0;
@@ -14,77 +27,84 @@
     }
 
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       min-height: 100vh;
-      color: #333;
+      color: #2d3748;
+      line-height: 1.6;
     }
 
-    .dashboard-container {
-      max-width: 1200px;
-      margin: 0 auto;
+    .dashboard-wrapper {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .dashboard-main {
+      flex: 1;
       padding: 2rem;
-      min-height: calc(100vh - 140px);
+      max-width: 1400px;
+      margin: 250px;
+      width: 100%;
     }
 
+    /* Welcome Section */
     .welcome-section {
       text-align: center;
       margin-bottom: 3rem;
       color: white;
     }
 
-    .welcome-section h2 {
-      font-size: 2.5rem;
+    .welcome-section h1 {
+      font-size: 2.75rem;
+      font-weight: 800;
       margin-bottom: 0.5rem;
-      font-weight: 700;
-      background: linear-gradient(45deg, #fff, #e0f7fa);
+      background: linear-gradient(135deg, #fff 0%, #e0f7fa 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
+      letter-spacing: -0.5px;
     }
 
-    .subtitle {
-      font-size: 1.2rem;
+    .welcome-subtitle {
+      font-size: 1.25rem;
       opacity: 0.9;
-      font-weight: 300;
+      font-weight: 400;
+      margin-bottom: 1rem;
     }
 
-    .role-badge {
-      display: inline-block;
-      background: linear-gradient(135deg, #e74c3c, #c0392b);
+    .role-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(10px);
       color: white;
-      padding: 0.5rem 1.5rem;
-      border-radius: 25px;
+      padding: 0.75rem 1.5rem;
+      border-radius: 50px;
       font-size: 0.9rem;
       font-weight: 600;
-      margin-top: 0.5rem;
-      box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.2);
     }
 
-    .operator-badge {
-      background: linear-gradient(135deg, #3498db, #2980b9);
-    }
-
-    .customer-badge {
-      background: linear-gradient(135deg, #2ecc71, #27ae60);
-    }
-
+    /* Stats Grid */
     .stats-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
       gap: 1.5rem;
-      margin-bottom: 3rem;
+      margin-bottom: 2.5rem;
     }
 
     .stat-card {
       background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(10px);
-      border-radius: 15px;
-      padding: 1.5rem;
-      text-align: center;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      transition: all 0.3s ease;
+      backdrop-filter: blur(20px);
+      border-radius: 20px;
+      padding: 2rem;
+      box-shadow: 
+        0 8px 32px rgba(0, 0, 0, 0.1),
+        0 2px 8px rgba(0, 0, 0, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       position: relative;
       overflow: hidden;
     }
@@ -96,131 +116,211 @@
       left: -100%;
       width: 100%;
       height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
-      transition: left 0.5s;
+      background: linear-gradient(90deg, 
+        transparent, 
+        rgba(255, 255, 255, 0.4), 
+        transparent);
+      transition: left 0.6s ease;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 
+        0 20px 40px rgba(0, 0, 0, 0.15),
+        0 8px 16px rgba(0, 0, 0, 0.1);
     }
 
     .stat-card:hover::before {
       left: 100%;
     }
 
-    .stat-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
-    }
-
-    .stat-icon {
-      font-size: 2.5rem;
+    .stat-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
       margin-bottom: 1rem;
     }
 
-    .stat-number {
-      font-size: 2rem;
-      font-weight: 700;
-      color: #2c3e50;
-      margin-bottom: 0.5rem;
-    }
-
-    .stat-label {
-      color: #7f8c8d;
-      font-weight: 500;
+    .stat-icon {
+      width: 60px;
+      height: 60px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: white;
+      box-shadow: 0 4px 12px rgba(67, 97, 238, 0.3);
     }
 
     .stat-trend {
-      font-size: 0.8rem;
-      margin-top: 0.5rem;
+      font-size: 0.875rem;
       font-weight: 600;
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+      background: rgba(76, 201, 240, 0.1);
+      color: var(--success);
     }
 
-    .trend-up {
-      color: #2ecc71;
+    .trend-up { color: #10b981; background: rgba(16, 185, 129, 0.1); }
+    .trend-down { color: #ef4444; background: rgba(239, 68, 68, 0.1); }
+
+    .stat-content h3 {
+      font-size: 2.5rem;
+      font-weight: 800;
+      color: var(--dark);
+      margin-bottom: 0.5rem;
+      line-height: 1;
     }
 
-    .trend-down {
-      color: #e74c3c;
+    .stat-label {
+      color: var(--gray);
+      font-weight: 500;
+      font-size: 0.95rem;
     }
 
-    .cards-grid {
+    /* Quick Actions */
+    .quick-actions {
+      margin-bottom: 2.5rem;
+    }
+
+    .section-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: white;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .actions-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
       gap: 1.5rem;
-      margin-bottom: 2rem;
     }
 
-    .card {
+    .action-card {
       background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(10px);
-      border-radius: 15px;
+      backdrop-filter: blur(20px);
+      border-radius: 20px;
       padding: 2rem;
       text-decoration: none;
       color: inherit;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      transition: all 0.3s ease;
+      box-shadow: 
+        0 8px 32px rgba(0, 0, 0, 0.1),
+        0 2px 8px rgba(0, 0, 0, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       position: relative;
       overflow: hidden;
-      cursor: pointer;
     }
 
-    .card::before {
+    .action-card::before {
       content: '';
       position: absolute;
       top: 0;
       left: -100%;
       width: 100%;
       height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
-      transition: left 0.5s;
+      background: linear-gradient(90deg, 
+        transparent, 
+        rgba(255, 255, 255, 0.4), 
+        transparent);
+      transition: left 0.6s ease;
     }
 
-    .card:hover::before {
+    .action-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 
+        0 16px 32px rgba(0, 0, 0, 0.15),
+        0 6px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .action-card:hover::before {
       left: 100%;
     }
 
-    .card:hover {
-      transform: translateY(-8px);
-      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+    .action-card.primary {
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: white;
     }
 
-    .card h3 {
-      font-size: 1.5rem;
-      margin-bottom: 0.5rem;
-      color: #2c3e50;
+    .action-card.primary .action-title,
+    .action-card.primary .action-description {
+      color: white;
+    }
+
+    .action-icon {
+      width: 50px;
+      height: 50px;
+      border-radius: 12px;
       display: flex;
       align-items: center;
-      gap: 0.5rem;
+      justify-content: center;
+      font-size: 1.25rem;
+      margin-bottom: 1rem;
+      background: rgba(255, 255, 255, 0.2);
+      color: var(--primary);
     }
 
-    .card p {
-      color: #7f8c8d;
+    .action-card.primary .action-icon {
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+    }
+
+    .action-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--dark);
+      margin-bottom: 0.5rem;
+    }
+
+    .action-description {
+      color: var(--gray);
+      font-size: 0.95rem;
       line-height: 1.5;
     }
 
-    .quick-action {
-      background: linear-gradient(135deg, #667eea, #764ba2);
-      color: white;
-    }
-
-    .quick-action h3, .quick-action p {
-      color: white;
-    }
-
+    /* Recent Activity */
     .recent-activity {
       background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(10px);
-      border-radius: 15px;
+      backdrop-filter: blur(20px);
+      border-radius: 20px;
       padding: 2rem;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-      border: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 
+        0 8px 32px rgba(0, 0, 0, 0.1),
+        0 2px 8px rgba(0, 0, 0, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.3);
     }
 
-    .recent-activity h3 {
-      color: #2c3e50;
-      margin-bottom: 1.5rem;
-      font-size: 1.5rem;
+    .activity-header {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
+      justify-content: space-between;
+      margin-bottom: 1.5rem;
+    }
+
+    .activity-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--dark);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .view-all {
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.95rem;
+      transition: color 0.2s ease;
+    }
+
+    .view-all:hover {
+      color: var(--primary-dark);
     }
 
     .activity-list {
@@ -232,122 +332,97 @@
       display: flex;
       align-items: center;
       gap: 1rem;
-      padding: 1rem;
-      background: rgba(236, 240, 241, 0.5);
-      border-radius: 10px;
-      transition: background 0.3s ease;
+      padding: 1.25rem;
+      background: rgba(248, 249, 250, 0.8);
+      border-radius: 16px;
+      transition: all 0.2s ease;
+      border: 1px solid transparent;
     }
 
     .activity-item:hover {
-      background: rgba(236, 240, 241, 0.8);
+      background: rgba(248, 249, 250, 1);
+      border-color: var(--border);
+      transform: translateX(4px);
     }
 
     .activity-icon {
-      font-size: 1.5rem;
-      width: 40px;
-      height: 40px;
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
       display: flex;
       align-items: center;
       justify-content: center;
-      background: linear-gradient(135deg, #667eea, #764ba2);
-      border-radius: 50%;
+      font-size: 1.1rem;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
       color: white;
+      flex-shrink: 0;
     }
 
     .activity-content {
       flex: 1;
     }
 
-    .activity-title {
+    .activity-title-text {
       font-weight: 600;
-      color: #2c3e50;
+      color: var(--dark);
       margin-bottom: 0.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
     }
 
     .activity-time {
-      font-size: 0.85rem;
-      color: #7f8c8d;
+      font-size: 0.875rem;
+      color: var(--gray);
     }
 
     .status-badge {
-      padding: 0.25rem 0.75rem;
-      border-radius: 15px;
+      padding: 0.375rem 0.75rem;
+      border-radius: 12px;
       font-size: 0.75rem;
       font-weight: 600;
-      margin-left: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
 
     .status-active {
-      background: #e8f5e8;
-      color: #2ecc71;
+      background: rgba(16, 185, 129, 0.1);
+      color: #10b981;
     }
 
     .status-completed {
-      background: #e3f2fd;
-      color: #3498db;
+      background: rgba(59, 130, 246, 0.1);
+      color: #3b82f6;
     }
 
     .status-pending {
-      background: #fff3e0;
-      color: #f39c12;
+      background: rgba(245, 158, 11, 0.1);
+      color: #f59e0b;
     }
 
     .empty-state {
       text-align: center;
-      padding: 2rem;
-      color: #7f8c8d;
+      padding: 3rem 2rem;
+      color: var(--gray);
     }
 
-    .empty-state .icon {
-      font-size: 3rem;
+    .empty-icon {
+      font-size: 3.5rem;
       margin-bottom: 1rem;
       opacity: 0.5;
     }
 
-    /* Responsive Design */
-    @media (max-width: 768px) {
-      .dashboard-container {
-        padding: 1rem;
-      }
-
-      .welcome-section h2 {
-        font-size: 2rem;
-      }
-
-      .stats-grid {
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 1rem;
-      }
-
-      .cards-grid {
-        grid-template-columns: 1fr;
-        gap: 1rem;
-      }
-
-      .stat-card, .card {
-        padding: 1.25rem;
-      }
-
-      .stat-number {
-        font-size: 1.75rem;
-      }
+    .empty-text {
+      font-size: 1.1rem;
+      margin-bottom: 0.5rem;
     }
 
-    @media (max-width: 480px) {
-      .welcome-section h2 {
-        font-size: 1.75rem;
-      }
-
-      .stats-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .subtitle {
-        font-size: 1rem;
-      }
+    .empty-subtext {
+      font-size: 0.95rem;
+      opacity: 0.7;
     }
 
-    /* Animation for cards */
+    /* Animations */
     @keyframes fadeInUp {
       from {
         opacity: 0;
@@ -359,7 +434,7 @@
       }
     }
 
-    .stat-card, .card {
+    .stat-card, .action-card {
       animation: fadeInUp 0.6s ease-out;
     }
 
@@ -367,358 +442,448 @@
     .stat-card:nth-child(2) { animation-delay: 0.2s; }
     .stat-card:nth-child(3) { animation-delay: 0.3s; }
     .stat-card:nth-child(4) { animation-delay: 0.4s; }
-    .card:nth-child(1) { animation-delay: 0.2s; }
-    .card:nth-child(2) { animation-delay: 0.3s; }
-    .card:nth-child(3) { animation-delay: 0.4s; }
-    .card:nth-child(4) { animation-delay: 0.5s; }
-    .card:nth-child(5) { animation-delay: 0.6s; }
+    .action-card:nth-child(1) { animation-delay: 0.2s; }
+    .action-card:nth-child(2) { animation-delay: 0.3s; }
+    .action-card:nth-child(3) { animation-delay: 0.4s; }
+    .action-card:nth-child(4) { animation-delay: 0.5s; }
 
-    /* Loading animation */
-    .loading {
-      opacity: 0.7;
-      pointer-events: none;
+    /* Responsive Design */
+    @media (max-width: 1024px) {
+      .dashboard-main {
+        padding: 1.5rem;
+      }
+      
+      .stats-grid {
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      }
     }
 
-    .pulse {
-      animation: pulse 1.5s infinite;
+    @media (max-width: 768px) {
+      .dashboard-main {
+        padding: 1rem;
+      }
+
+      .welcome-section h1 {
+        font-size: 2.25rem;
+      }
+
+      .stat-card, .action-card {
+        padding: 1.5rem;
+      }
+
+      .stat-content h3 {
+        font-size: 2rem;
+      }
+
+      .actions-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .section-title {
+        font-size: 1.25rem;
+      }
     }
 
-    @keyframes pulse {
-      0% { opacity: 1; }
-      50% { opacity: 0.5; }
-      100% { opacity: 1; }
+    @media (max-width: 480px) {
+      .welcome-section h1 {
+        font-size: 2rem;
+      }
+
+      .welcome-subtitle {
+        font-size: 1.1rem;
+      }
+
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .stat-card {
+        padding: 1.25rem;
+      }
+    }
+
+    /* Loading States */
+    .skeleton {
+      background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+      background-size: 200% 100%;
+      animation: loading 1.5s infinite;
+      border-radius: 4px;
+    }
+
+    @keyframes loading {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
     }
   </style>
 </head>
 <body>
-  <!-- Header -->
-  <%- include("../patials/_header") %>
+  <%- include("../patials/_dashnav") %>
+  <div class="dashboard-wrapper"   style=" margin-left="250px">
+    <!-- Header -->
+    <%- include("../patials/_header") %>
 
-  <main class="dashboard-container">
-    <div class="welcome-section">
-      <h2>Welcome, <%= user.username %> 👋</h2>
-      <p class="subtitle">
-        <% if (isCustomer) { %>
-          Here's your personal parking dashboard
-        <% } else { %>
-          Parking Management System Overview
-        <% } %>
-      </p>
-      <div class="role-badge 
-        <% if (isAdmin) { %>admin-badge<% } %>
-        <% if (isOperator) { %>operator-badge<% } %>
-        <% if (isCustomer) { %>customer-badge<% } %>">
-        <%= user.role.toUpperCase() %>
+
+
+    <main class="dashboard-main">
+      <!-- Welcome Section -->
+      <div class="welcome-section">
+        <h1>Welcome back, <%= user.username %>! 👋</h1>
+        <p class="welcome-subtitle">
+          <% if (isCustomer) { %>
+            Here's your personalized parking overview
+          <% } else { %>
+            Parking management dashboard
+          <% } %>
+        </p>
+        <div class="role-chip">
+          <i class="fas fa-user-shield"></i>
+          <%= user.role.toUpperCase() %>
+        </div>
       </div>
-    </div>
-    <!-- sedebar patial -->
-     <%- include("../patials/_dashnav") %>
-    <!-- Statistics Cards -->
-    <div class="stats-grid">
-      <% if (isAdmin || isOperator) { %>
-        <div class="stat-card">
-          <div class="stat-icon">👥</div>
-          <div class="stat-number" id="stat-customers"><%= stats.totalCustomers || 0 %></div>
-          <div class="stat-label">Total Customers</div>
-          <div class="stat-trend trend-up">+5% this week</div>
-        </div>
 
-        <div class="stat-card">
-          <div class="stat-icon">🚗</div>
-          <div class="stat-number" id="stat-vehicles"><%= stats.totalVehicles || 0 %></div>
-          <div class="stat-label">Total Vehicles</div>
-          <div class="stat-trend trend-up">+3% today</div>
-        </div>
-
-        <div class="stat-card">
-          <div class="stat-icon">🅿️</div>
-          <div class="stat-number" id="stat-slots">
-            <%= stats.availableSlots || 0 %>/<%= stats.totalSlots || 0 %>
+      <!-- Statistics Grid -->
+      <div class="stats-grid">
+        <% if (isAdmin || isOperator) { %>
+          <!-- Admin/Operator Stats -->
+          <div class="stat-card">
+            <div class="stat-header">
+              <div class="stat-icon">
+                <i class="fas fa-users"></i>
+              </div>
+              <div class="stat-trend trend-up">+5%</div>
+            </div>
+            <div class="stat-content">
+              <h3><%= stats.totalCustomers || 0 %></h3>
+              <p class="stat-label">Total Customers</p>
+            </div>
           </div>
-          <div class="stat-label">Available Slots</div>
-          <div class="stat-trend">
-            <% if (stats.totalSlots > 0) { %>
-              <%= Math.round((stats.availableSlots / stats.totalSlots) * 100) %>% available
-            <% } %>
+
+          <div class="stat-card">
+            <div class="stat-header">
+              <div class="stat-icon">
+                <i class="fas fa-car"></i>
+              </div>
+              <div class="stat-trend trend-up">+3%</div>
+            </div>
+            <div class="stat-content">
+              <h3><%= stats.totalVehicles || 0 %></h3>
+              <p class="stat-label">Registered Vehicles</p>
+            </div>
           </div>
-        </div>
 
-        <div class="stat-card">
-          <div class="stat-icon">⏱️</div>
-          <div class="stat-number" id="stat-sessions"><%= stats.activeSessions || 0 %></div>
-          <div class="stat-label">Active Sessions</div>
-          <div class="stat-trend trend-up">
-            Ksh <%= stats.todayRevenue || 0 %> today
+          <div class="stat-card">
+            <div class="stat-header">
+              <div class="stat-icon">
+                <i class="fas fa-parking"></i>
+              </div>
+              <div class="stat-trend">
+                <% if (stats.totalSlots > 0) { %>
+                  <%= Math.round((stats.availableSlots / stats.totalSlots) * 100) %>%
+                <% } %>
+              </div>
+            </div>
+            <div class="stat-content">
+              <h3><%= stats.availableSlots || 0 %>/<%= stats.totalSlots || 0 %></h3>
+              <p class="stat-label">Available Slots</p>
+            </div>
           </div>
-        </div>
-      <% } else { %>
-        <!-- Customer-specific stats -->
-        <div class="stat-card">
-          <div class="stat-icon">🚗</div>
-          <div class="stat-number"><%= stats.totalVehicles || 0 %></div>
-          <div class="stat-label">My Vehicles</div>
-          <div class="stat-trend">
-            <% if (stats.totalVehicles > 0) { %>
-              <%= stats.totalVehicles %> registered
-            <% } else { %>
-              No vehicles yet
-            <% } %>
+
+          <div class="stat-card">
+            <div class="stat-header">
+              <div class="stat-icon">
+                <i class="fas fa-clock"></i>
+              </div>
+              <div class="stat-trend trend-up">
+                Ksh <%= stats.todayRevenue || 0 %>
+              </div>
+            </div>
+            <div class="stat-content">
+              <h3><%= stats.activeSessions || 0 %></h3>
+              <p class="stat-label">Active Sessions</p>
+            </div>
           </div>
-        </div>
-
-        <div class="stat-card">
-          <div class="stat-icon">⏱️</div>
-          <div class="stat-number"><%= stats.activeSessions || 0 %></div>
-          <div class="stat-label">Active Parking</div>
-          <div class="stat-trend">
-            <% if (stats.activeSessions > 0) { %>
-              Currently parked
-            <% } else { %>
-              No active sessions
-            <% } %>
+        <% } else { %>
+          <!-- Customer Stats -->
+          <div class="stat-card">
+            <div class="stat-header">
+              <div class="stat-icon">
+                <i class="fas fa-car"></i>
+              </div>
+              <div class="stat-trend">
+                <% if (stats.totalVehicles > 0) { %>
+                  <%= stats.totalVehicles %> registered
+                <% } else { %>
+                  Add vehicle
+                <% } %>
+              </div>
+            </div>
+            <div class="stat-content">
+              <h3><%= stats.totalVehicles || 0 %></h3>
+              <p class="stat-label">My Vehicles</p>
+            </div>
           </div>
-        </div>
 
-        <div class="stat-card">
-          <div class="stat-icon">📅</div>
-          <div class="stat-number"><%= stats.upcomingReservations || 0 %></div>
-          <div class="stat-label">Upcoming Reservations</div>
-          <div class="stat-trend">
-            <% if (stats.upcomingReservations > 0) { %>
-              <%= stats.upcomingReservations %> booked
-            <% } else { %>
-              No reservations
-            <% } %>
+          <div class="stat-card">
+            <div class="stat-header">
+              <div class="stat-icon">
+                <i class="fas fa-parking"></i>
+              </div>
+              <div class="stat-trend">
+                <% if (stats.activeSessions > 0) { %>
+                  Currently parked
+                <% } else { %>
+                  No active sessions
+                <% } %>
+              </div>
+            </div>
+            <div class="stat-content">
+              <h3><%= stats.activeSessions || 0 %></h3>
+              <p class="stat-label">Active Parking</p>
+            </div>
           </div>
+
+          <div class="stat-card">
+            <div class="stat-header">
+              <div class="stat-icon">
+                <i class="fas fa-calendar-check"></i>
+              </div>
+              <div class="stat-trend">
+                <% if (stats.upcomingReservations > 0) { %>
+                  <%= stats.upcomingReservations %> booked
+                <% } else { %>
+                  No reservations
+                <% } %>
+              </div>
+            </div>
+            <div class="stat-content">
+              <h3><%= stats.upcomingReservations || 0 %></h3>
+              <p class="stat-label">Upcoming Reservations</p>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-header">
+              <div class="stat-icon">
+                <i class="fas fa-chart-line"></i>
+              </div>
+              <div class="stat-trend">View history</div>
+            </div>
+            <div class="stat-content">
+              <h3>Ksh 0</h3>
+              <p class="stat-label">Monthly Spending</p>
+            </div>
+          </div>
+        <% } %>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="quick-actions">
+        <h2 class="section-title">
+          <i class="fas fa-bolt"></i>
+          Quick Actions
+        </h2>
+        <div class="actions-grid">
+          <% if (isAdmin || isOperator) { %>
+            <!-- Admin/Operator Actions -->
+            <a href="/admin/customers" class="action-card">
+              <div class="action-icon">
+                <i class="fas fa-users"></i>
+              </div>
+              <h3 class="action-title">Manage Customers</h3>
+              <p class="action-description">View and manage customer records and information</p>
+            </a>
+
+            <a href="/admin/vehicles" class="action-card">
+              <div class="action-icon">
+                <i class="fas fa-car"></i>
+              </div>
+              <h3 class="action-title">Vehicle Management</h3>
+              <p class="action-description">Handle registered vehicles and license plates</p>
+            </a>
+
+            <a href="/admin/sessions" class="action-card">
+              <div class="action-icon">
+                <i class="fas fa-clock"></i>
+              </div>
+              <h3 class="action-title">Parking Sessions</h3>
+              <p class="action-description">Monitor active sessions and parking history</p>
+            </a>
+
+            <a href="/admin/reservations" class="action-card">
+              <div class="action-icon">
+                <i class="fas fa-calendar-check"></i>
+              </div>
+              <h3 class="action-title">Reservations</h3>
+              <p class="action-description">Manage bookings and scheduling</p>
+            </a>
+          <% } else { %>
+            <!-- Customer Actions -->
+            <a href="/user/vehicles" class="action-card">
+              <div class="action-icon">
+                <i class="fas fa-car"></i>
+              </div>
+              <h3 class="action-title">My Vehicles</h3>
+              <p class="action-description">Manage your registered vehicles and license plates</p>
+            </a>
+
+            <a href="/user/reservations" class="action-card">
+              <div class="action-icon">
+                <i class="fas fa-calendar-check"></i>
+              </div>
+              <h3 class="action-title">My Reservations</h3>
+              <p class="action-description">View and manage your parking bookings</p>
+            </a>
+
+            <a href="/user/reservations" class="action-card primary">
+              <div class="action-icon">
+                <i class="fas fa-parking"></i>
+              </div>
+              <h3 class="action-title">Park Now</h3>
+              <p class="action-description">Start a new parking session immediately</p>
+            </a>
+
+            <a href="/user/reservations" class="action-card primary">
+              <div class="action-icon">
+                <i class="fas fa-calendar-plus"></i>
+              </div>
+              <h3 class="action-title">Book Slot</h3>
+              <p class="action-description">Reserve a parking slot for future use</p>
+            </a>
+          <% } %>
         </div>
+      </div>
 
-        <div class="stat-card">
-          <div class="stat-icon">💰</div>
-          <div class="stat-number">Ksh 0</div>
-          <div class="stat-label">Monthly Spending</div>
-          <div class="stat-trend">View history</div>
-        </div>
-      <% } %>
-    </div>
-
-    <!-- Quick Access Cards -->
-    <div class="cards-grid">
-      <% if (isAdmin || isOperator) { %>
-        <a href="/admin/customers" class="card">
-          <h3><i class="fas fa-users me-2"></i>Customers</h3>
-          <p>Manage customer records, view details, and handle customer information</p>
-        </a>
-
-        <a href="/admin/vehicles" class="card">
-          <h3><i class="fas fa-car me-2"></i>Vehicles</h3>
-          <p>View and manage registered vehicles, license plates, and vehicle types</p>
-        </a>
-
-        <a href="/admin/slots" class="card">
-          <h3><i class="fas fa-parking me-2"></i>Parking Slots</h3>
-          <p>Monitor slot availability, assign slots, and manage parking space</p>
-        </a>
-
-        <a href="/admin/sessions" class="card">
-          <h3><i class="fas fa-clock me-2"></i>Sessions</h3>
-          <p>Track active parking sessions, start/end sessions, and view history</p>
-        </a>
-
-        <a href="/admin/reservations" class="card">
-          <h3><i class="fas fa-calendar-check me-2"></i>Reservations</h3>
-          <p>Manage bookings, confirm reservations, and handle scheduling</p>
-        </a>
-
-        <% if (isAdmin) { %>
-          <a href="/admin/dashboard" class="card">
-            <h3><i class="fas fa-cog me-2"></i>System Settings</h3>
-            <p>System administration, user management, and advanced settings</p>
+      <!-- Recent Activity -->
+      <div class="recent-activity">
+        <div class="activity-header">
+          <h2 class="activity-title">
+            <i class="fas fa-history"></i>
+            Recent Activity
+          </h2>
+          <a href="/user/sessions" class="view-all">
+            View All <i class="fas fa-chevron-right"></i>
           </a>
-        <% } %>
-      <% } else { %>
-        <!-- Customer-specific quick actions -->
-        <a href="/user/vehicles" class="card">
-          <h3><i class="fas fa-car me-2"></i>My Vehicles</h3>
-          <p>Manage your registered vehicles and license plates</p>
-        </a>
-
-        <a href="/user/reservations" class="card">
-          <h3><i class="fas fa-calendar-check me-2"></i>My Reservations</h3>
-          <p>View and manage your parking reservations</p>
-        </a>
-
-        <a href="/user/reservations" class="card quick-action">
-          <h3><i class="fas fa-parking me-2"></i>Park Now</h3>
-          <p>Start a new parking session immediately</p>
-        </a>
-
-        <a href="/user/reservations" class="card quick-action">
-          <h3><i class="fas fa-calendar-plus me-2"></i>Book Slot</h3>
-          <p>Reserve a parking slot for later use</p>
-        </a>
-
-        <a href="/user/profile" class="card">
-          <h3><i class="fas fa-user me-2"></i>My Profile</h3>
-          <p>Update your personal information and preferences</p>
-        </a>
-
-        <div class="card">
-          <h3><i class="fas fa-phone me-2"></i>Support</h3>
-          <p>Get help with parking services and report issues</p>
         </div>
-      <% } %>
-    </div>
 
-    <!-- Recent Activity Section -->
-    <div class="recent-activity">
-      <h3><i class="fas fa-chart-bar me-2"></i>Recent Activity</h3>
-      <div class="activity-list" id="activity-list">
-        <% if (recentActivity && recentActivity.length > 0) { %>
-          <% recentActivity.slice(0, 8).forEach(activity => { %>
-            <div class="activity-item">
-              <div class="activity-icon">
-                <% if (activity.exit_time) { %>
-                  <i class="fas fa-sign-out-alt"></i>
-                <% } else { %>
-                  <i class="fas fa-car"></i>
-                <% } %>
-              </div>
-              <div class="activity-content">
-                <div class="activity-title">
-                  Vehicle <%= activity.license_plate %> 
+        <div class="activity-list">
+          <% if (recentActivity && recentActivity.length > 0) { %>
+            <% recentActivity.slice(0, 6).forEach(activity => { %>
+              <div class="activity-item">
+                <div class="activity-icon">
                   <% if (activity.exit_time) { %>
-                    exited <%= activity.slot_number %>
+                    <i class="fas fa-sign-out-alt"></i>
                   <% } else { %>
-                    parked in <%= activity.slot_number %>
+                    <i class="fas fa-car"></i>
                   <% } %>
-                  <span class="status-badge <%= activity.exit_time ? 'status-completed' : 'status-active' %>">
-                    <%= activity.exit_time ? 'Completed' : 'Active' %>
-                  </span>
                 </div>
-                <div class="activity-time">
-                  <%= new Date(activity.entry_time).toLocaleString() %>
-                  <% if (activity.total_fee > 0) { %>
-                    • Ksh <%= activity.total_fee %>
-                  <% } %>
-                  <% if (activity.customer_name && (isAdmin || isOperator)) { %>
-                    • <%= activity.customer_name %>
-                  <% } %>
+                <div class="activity-content">
+                  <div class="activity-title-text">
+                    Vehicle <%= activity.license_plate %> 
+                    <% if (activity.exit_time) { %>
+                      exited slot <%= activity.slot_number %>
+                    <% } else { %>
+                      parked in slot <%= activity.slot_number %>
+                    <% } %>
+                    <span class="status-badge <%= activity.exit_time ? 'status-completed' : 'status-active' %>">
+                      <%= activity.exit_time ? 'Completed' : 'Active' %>
+                    </span>
+                  </div>
+                  <div class="activity-time">
+                    <%= new Date(activity.entry_time).toLocaleString() %>
+                    <% if (activity.total_fee > 0) { %>
+                      • Ksh <%= activity.total_fee %>
+                    <% } %>
+                    <% if (activity.customer_name && (isAdmin || isOperator)) { %>
+                      • <%= activity.customer_name %>
+                    <% } %>
+                  </div>
                 </div>
               </div>
-            </div>
-          <% }) %>
-        <% } else if (recentSessions && recentSessions.length > 0) { %>
-          <!-- Fallback for customer recent sessions -->
-          <% recentSessions.slice(0, 5).forEach(session => { %>
-            <div class="activity-item">
-              <div class="activity-icon">
-                <% if (session.exit_time) { %>
-                  <i class="fas fa-sign-out-alt"></i>
+            <% }) %>
+          <% } else if (recentSessions && recentSessions.length > 0) { %>
+            <% recentSessions.slice(0, 5).forEach(session => { %>
+              <div class="activity-item">
+                <div class="activity-icon">
+                  <% if (session.exit_time) { %>
+                    <i class="fas fa-sign-out-alt"></i>
+                  <% } else { %>
+                    <i class="fas fa-car"></i>
+                  <% } %>
+                </div>
+                <div class="activity-content">
+                  <div class="activity-title-text">
+                    Vehicle <%= session.license_plate %> in slot <%= session.slot_number %>
+                    <span class="status-badge <%= session.exit_time ? 'status-completed' : 'status-active' %>">
+                      <%= session.exit_time ? 'Completed' : 'Active' %>
+                    </span>
+                  </div>
+                  <div class="activity-time">
+                    <%= new Date(session.entry_time).toLocaleString() %>
+                    <% if (session.total_fee > 0) { %>
+                      • Ksh <%= session.total_fee %>
+                    <% } %>
+                  </div>
+                </div>
+              </div>
+            <% }) %>
+          <% } else { %>
+            <div class="empty-state">
+              <div class="empty-icon">
+                <i class="fas fa-chart-bar"></i>
+              </div>
+              <p class="empty-text">No recent activity</p>
+              <p class="empty-subtext">
+                <% if (isCustomer) { %>
+                  Your parking sessions will appear here once you start parking
                 <% } else { %>
-                  <i class="fas fa-car"></i>
+                  System activities will appear here as they occur
                 <% } %>
-              </div>
-              <div class="activity-content">
-                <div class="activity-title">
-                  Vehicle <%= session.license_plate %> parked in <%= session.slot_number %>
-                  <span class="status-badge <%= session.exit_time ? 'status-completed' : 'status-active' %>">
-                    <%= session.exit_time ? 'Completed' : 'Active' %>
-                  </span>
-                </div>
-                <div class="activity-time">
-                  <%= new Date(session.entry_time).toLocaleString() %>
-                  <% if (session.total_fee > 0) { %>
-                    • Ksh <%= session.total_fee %>
-                  <% } %>
-                </div>
-              </div>
+              </p>
             </div>
-          <% }) %>
-        <% } else { %>
-          <div class="empty-state">
-            <div class="icon"><i class="fas fa-chart-bar"></i></div>
-            <p>No recent activity</p>
-            <p style="font-size: 0.9rem; margin-top: 0.5rem;">
-              <% if (isCustomer) { %>
-                Your parking sessions will appear here
-              <% } else { %>
-                System activities will appear here
-              <% } %>
-            </p>
-          </div>
-        <% } %>
+          <% } %>
+        </div>
       </div>
-    </div>
-  </main>
+    </main>
 
-  <!-- Footer -->
-  <%- include("../patials/_footer") %>
+    <!-- Footer -->
+    <%- include("../patials/_footer") %>
+  </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', function() {
-      // Add click animation to cards
-      const cards = document.querySelectorAll('.card');
+      // Enhanced card interactions
+      const cards = document.querySelectorAll('.stat-card, .action-card');
       cards.forEach(card => {
-        card.addEventListener('click', function(e) {
-          if (this.getAttribute('href')) {
-            this.style.transform = 'scale(0.95)';
-            setTimeout(() => {
-              this.style.transform = '';
-            }, 150);
-          }
+        card.addEventListener('mouseenter', function() {
+          this.style.transform = 'translateY(-8px) scale(1.02)';
         });
+        
+        card.addEventListener('mouseleave', function() {
+          this.style.transform = 'translateY(0) scale(1)';
+        });
+
+        // Click animation for action cards
+        if (card.classList.contains('action-card')) {
+          card.addEventListener('click', function(e) {
+            if (this.getAttribute('href')) {
+              this.style.transform = 'scale(0.98)';
+              setTimeout(() => {
+                this.style.transform = '';
+              }, 150);
+            }
+          });
+        }
       });
 
-      // Auto-refresh stats every 30 seconds (for admin/operator)
+      // Auto-refresh for admin/operator dashboard
       <% if (isAdmin || isOperator) { %>
       setInterval(() => {
-        refreshStats();
+        refreshDashboardData();
       }, 30000);
       <% } %>
 
-      // Add real-time updates for active sessions
-      function refreshStats() {
-        console.log('Refreshing dashboard stats...');
-        // You can implement AJAX calls here to update stats without page reload
-        // Example:
-        // fetch('/api/dashboard/stats')
-        //   .then(response => response.json())
-        //   .then(data => updateStats(data));
-      }
-
-      function updateStats(data) {
-        // Update stat numbers with animation
-        const statElements = {
-          'customers': document.getElementById('stat-customers'),
-          'vehicles': document.getElementById('stat-vehicles'),
-          'slots': document.getElementById('stat-slots'),
-          'sessions': document.getElementById('stat-sessions')
-        };
-
-        for (const [key, element] of Object.entries(statElements)) {
-          if (element && data[key] !== undefined) {
-            // Add pulse animation
-            element.classList.add('pulse');
-            setTimeout(() => {
-              element.textContent = data[key];
-              element.classList.remove('pulse');
-            }, 300);
-          }
-        }
-      }
-
-      // Add loading states for better UX
-      const links = document.querySelectorAll('a[href]');
-      links.forEach(link => {
-        link.addEventListener('click', function(e) {
-          if (this.getAttribute('href').startsWith('/')) {
-            this.classList.add('loading');
-          }
-        });
-      });
-
-      // Add keyboard shortcuts
+      // Keyboard shortcuts
       document.addEventListener('keydown', function(e) {
         if (e.ctrlKey || e.metaKey) {
           switch(e.key) {
@@ -732,54 +897,75 @@
               break;
             case '3':
               e.preventDefault();
-              window.location.href = '<%= isAdmin || isOperator ? "/admin/sessions" : "/user/dashboard" %>';
-              break;
-            case '4':
-              e.preventDefault();
-              window.location.href = '<%= isAdmin || isOperator ? "/admin/reservations" : "/user/reservations" %>';
+              window.location.href = '<%= isAdmin || isOperator ? "/admin/sessions" : "/user/sessions" %>';
               break;
           }
         }
       });
 
-      // Add service worker registration for offline functionality
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/sw.js')
-          .then(registration => console.log('SW registered'))
-          .catch(error => console.log('SW registration failed'));
+      // Online/offline detection
+      function updateOnlineStatus() {
+        if (navigator.onLine) {
+          showNotification('Connection restored', 'success');
+        } else {
+          showNotification('You are offline', 'warning');
+        }
       }
-    });
 
-    // Add online/offline detection
-    window.addEventListener('online', function() {
-      showNotification('Connection restored', 'success');
-    });
+      window.addEventListener('online', updateOnlineStatus);
+      window.addEventListener('offline', updateOnlineStatus);
 
-    window.addEventListener('offline', function() {
-      showNotification('You are offline', 'warning');
-    });
+      function showNotification(message, type) {
+        // Create and show notification
+        const notification = document.createElement('div');
+        notification.className = 'notification';
+        notification.innerHTML = `
+          <div style="
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            color: white;
+            font-weight: 600;
+            z-index: 1000;
+            background: ${type === 'success' ? '#10b981' : '#ef4444'};
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            animation: slideInRight 0.3s ease;
+          ">
+            <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-triangle'} me-2"></i>
+            ${message}
+          </div>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+          notification.remove();
+        }, 4000);
+      }
 
-    function showNotification(message, type) {
-      // Simple notification implementation
-      const notification = document.createElement('div');
-      notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        padding: 1rem 1.5rem;
-        border-radius: 10px;
-        color: white;
-        font-weight: 600;
-        z-index: 1000;
-        background: ${type === 'success' ? '#2ecc71' : '#e74c3c'};
-        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+      // Add CSS for slide-in animation
+      const style = document.createElement('style');
+      style.textContent = `
+        @keyframes slideInRight {
+          from {
+            transform: translateX(100%);
+            opacity: 0;
+          }
+          to {
+            transform: translateX(0);
+            opacity: 1;
+          }
+        }
       `;
-      notification.textContent = message;
-      document.body.appendChild(notification);
-      
-      setTimeout(() => {
-        notification.remove();
-      }, 3000);
+      document.head.appendChild(style);
+    });
+
+    function refreshDashboardData() {
+      // Implement AJAX call to refresh dashboard data
+      console.log('Refreshing dashboard data...');
+      // fetch('/api/dashboard/stats').then(...)
     }
   </script>
 </body>
