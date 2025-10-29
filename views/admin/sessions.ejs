@@ -10,6 +10,21 @@
         .sidebar { position: fixed; top: 0; bottom: 0; left: 0; z-index: 100; padding: 48px 0 0; box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1); }
         .sidebar-sticky { position: relative; top: 0; padding-top: .5rem; overflow-x: hidden; overflow-y: auto; }
         main { padding-top: 48px; }
+        .session-card { border-left: 4px solid; transition: transform 0.2s; }
+        .session-card:hover { transform: translateY(-2px); }
+        .session-active { border-left-color: #28a745 !important; }
+        .session-completed { border-left-color: #6c757d !important; opacity: 0.8; }
+        .duration-badge { font-size: 0.75rem; }
+        .vehicle-type-badge { font-size: 0.7rem; }
+        .debug-info { 
+            background: #f8f9fa; 
+            border: 1px solid #dee2e6; 
+            border-radius: 5px; 
+            padding: 10px; 
+            margin-bottom: 15px; 
+            font-family: monospace; 
+            font-size: 0.8rem;
+        }
     </style>
 </head>
 <body>
@@ -21,15 +36,31 @@
             
             <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
                 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                    <h1 class="h2">Parking Sessions</h1>
-                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#startSessionModal">
-                        <i class="fas fa-play me-1"></i>Start Session
-                    </button>
+                    <h1 class="h2">
+                        <i class="fas fa-clock me-2"></i>Parking Sessions
+                    </h1>
+                    <div>
+                        <button class="btn btn-outline-secondary me-2" onclick="window.location.reload()">
+                            <i class="fas fa-sync-alt me-1"></i>Refresh
+                        </button>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#startSessionModal">
+                            <i class="fas fa-play me-1"></i>Start Session
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Debug Information (remove in production) -->
+                <div class="debug-info" style="display: none;">
+                    <strong>Debug Info:</strong><br>
+                    Active Sessions Count: <span id="debugSessionsCount"><%= activeSessions.length %></span><br>
+                    Available Vehicles: <span id="debugVehiclesCount"><%= availableVehicles.length %></span><br>
+                    Available Slots: <span id="debugSlotsCount"><%= availableSlots.length %></span>
                 </div>
 
                 <!-- Server-side URL parameter handling -->
                 <% if (success) { %>
                     <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <i class="fas fa-check-circle me-2"></i>
                         <% if (success === 'session_started') { %>
                             Parking session started successfully!
                         <% } else if (success === 'session_ended') { %>
@@ -41,64 +72,206 @@
 
                 <% if (error) { %>
                     <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <i class="fas fa-exclamation-circle me-2"></i>
                         <% if (error === 'missing_fields') { %>
                             Please fill all required fields!
                         <% } else if (error === 'session_start_failed') { %>
                             Failed to start session. Please try again!
                         <% } else if (error === 'session_end_failed') { %>
                             Failed to end session. Please try again!
+                        <% } else if (error === 'slot_already_occupied') { %>
+                            Selected slot is already occupied!
+                        <% } else if (error === 'vehicle_already_parked') { %>
+                            Vehicle is already in an active session!
                         <% } %>
                         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
                 <% } %>
 
+                <!-- Statistics Cards -->
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="card text-white bg-primary">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h4 id="activeSessionsCount"><%= activeSessions.length %></h4>
+                                        <div>Active Sessions</div>
+                                    </div>
+                                    <div class="align-self-center">
+                                        <i class="fas fa-car fa-2x"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-white bg-success">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h4><%= availableSlots.length %></h4>
+                                        <div>Available Slots</div>
+                                    </div>
+                                    <div class="align-self-center">
+                                        <i class="fas fa-parking fa-2x"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-white bg-info">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h4><%= availableVehicles.length %></h4>
+                                        <div>Available Vehicles</div>
+                                    </div>
+                                    <div class="align-self-center">
+                                        <i class="fas fa-list fa-2x"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-white bg-warning">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h4 id="estimatedRevenue">0</h4>
+                                        <div>Estimated Revenue</div>
+                                    </div>
+                                    <div class="align-self-center">
+                                        <i class="fas fa-money-bill-wave fa-2x"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Active Sessions -->
                 <div class="card shadow mb-4">
-                    <div class="card-header">
+                    <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
                         <h5 class="card-title mb-0">
-                            <i class="fas fa-clock me-2 text-warning"></i>Active Parking Sessions
+                            <i class="fas fa-clock me-2"></i>Active Parking Sessions
+                            <span class="badge bg-dark ms-2" id="activeSessionsBadge"><%= activeSessions.length %></span>
                         </h5>
+                        <div>
+                            <span class="badge bg-light text-dark">
+                                <i class="fas fa-car me-1"></i>Currently Parked
+                            </span>
+                        </div>
                     </div>
                     <div class="card-body">
-                        <% if (activeSessions.length > 0) { %>
-                            <div class="table-responsive">
-                                <table class="table table-striped">
-                                    <thead>
-                                        <tr>
-                                            <th>Customer</th>
-                                            <th>Vehicle</th>
-                                            <th>Slot</th>
-                                            <th>Entry Time</th>
-                                            <th>Duration</th>
-                                            <th>Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <% activeSessions.forEach(session => { %>
-                                            <tr>
-                                                <td><%= session.customer_name %></td>
-                                                <td><strong><%= session.license_plate %></strong></td>
-                                                <td><span class="badge bg-primary">Slot <%= session.slot_number %></span></td>
-                                                <td><%= new Date(session.entry_time).toLocaleString() %></td>
-                                                <td>
-                                                    <%= Math.round((new Date() - new Date(session.entry_time)) / (1000 * 60 * 60 * 24)) %> days
-                                                </td>
-                                                <td>
+                        <% if (activeSessions && activeSessions.length > 0) { %>
+                            <div class="row">
+                                <% activeSessions.forEach(session => { %>
+                                    <div class="col-md-6 col-lg-4 mb-4">
+                                        <div class="card h-100 session-card session-active">
+                                            <div class="card-body">
+                                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                                    <h6 class="card-title">
+                                                        <i class="fas fa-car me-2 text-muted"></i>
+                                                        <%= session.license_plate %>
+                                                        <% if (session.vehicle_type) { %>
+                                                            <small class="vehicle-type-badge badge bg-secondary ms-1">
+                                                                <%= session.vehicle_type %>
+                                                            </small>
+                                                        <% } %>
+                                                    </h6>
+                                                    <span class="badge bg-success">
+                                                        <i class="fas fa-play me-1"></i>Active
+                                                    </span>
+                                                </div>
+                                                
+                                                <p class="card-text">
+                                                    <strong><i class="fas fa-user me-1 text-muted"></i>Customer:</strong> 
+                                                    <%= session.customer_name %><br>
+                                                    
+                                                    <strong><i class="fas fa-parking me-1 text-muted"></i>Slot:</strong> 
+                                                    <span class="badge bg-primary">#<%= session.slot_number %></span><br>
+                                                    
+                                                    <strong><i class="fas fa-sign-in-alt me-1 text-muted"></i>Entry:</strong> 
+                                                    <span class="entry-time" data-entry="<%= session.entry_time %>">
+                                                        <%= new Date(session.entry_time).toLocaleString() %>
+                                                    </span><br>
+                                                    
+                                                    <strong><i class="fas fa-clock me-1 text-muted"></i>Duration:</strong>
+                                                    <span class="badge duration-badge bg-light text-dark" data-entry="<%= session.entry_time %>">
+                                                        Calculating...
+                                                    </span><br>
+
+                                                    <strong><i class="fas fa-money-bill me-1 text-muted"></i>Current Fee:</strong>
+                                                    <span class="text-success fw-bold current-fee" data-entry="<%= session.entry_time %>">
+                                                        Calculating...
+                                                    </span>
+                                                </p>
+                                                
+                                                <div class="mt-3 pt-3 border-top">
                                                     <form action="/sessions/end/<%= session.session_id %>" method="POST" 
-                                                          class="d-inline" onsubmit="return confirm('End this parking session?')">
-                                                        <button type="submit" class="btn btn-sm btn-warning">
+                                                          class="d-grid" onsubmit="return confirmEndSession(this, '<%= session.license_plate %>')">
+                                                        <button type="submit" class="btn btn-warning btn-sm">
                                                             <i class="fas fa-stop me-1"></i>End Session
                                                         </button>
                                                     </form>
-                                                </td>
-                                            </tr>
-                                        <% }); %>
-                                    </tbody>
-                                </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                <% }); %>
                             </div>
                         <% } else { %>
-                            <p class="text-center text-muted py-4">No active parking sessions.</p>
+                            <div class="text-center py-5">
+                                <i class="fas fa-parking fa-3x text-muted mb-3"></i>
+                                <h5 class="text-muted">No Active Sessions</h5>
+                                <p class="text-muted">There are no active parking sessions at the moment.</p>
+                                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#startSessionModal">
+                                    <i class="fas fa-play me-1"></i>Start First Session
+                                </button>
+                            </div>
                         <% } %>
+                    </div>
+                </div>
+
+                <!-- Session History -->
+                <div class="card shadow">
+                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-history me-2 text-muted"></i>Recent Session History
+                        </h5>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="toggleSessionHistory()">
+                            <i class="fas fa-chevron-down me-1"></i>Toggle View
+                        </button>
+                    </div>
+                    <div class="card-body" id="sessionHistory" style="display: none;">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>Customer</th>
+                                        <th>Vehicle</th>
+                                        <th>Slot</th>
+                                        <th>Entry Time</th>
+                                        <th>Exit Time</th>
+                                        <th>Duration</th>
+                                        <th>Total Fee</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- This would typically come from your server -->
+                                    <tr>
+                                        <td colspan="8" class="text-center text-muted py-3">
+                                            <i class="fas fa-info-circle me-2"></i>
+                                            Session history would be displayed here. Add a query to fetch completed sessions.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </main>
@@ -107,40 +280,94 @@
 
     <!-- Start Session Modal -->
     <div class="modal fade" id="startSessionModal" tabindex="-1">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Start New Parking Session</h5>
+                    <h5 class="modal-title">
+                        <i class="fas fa-play-circle me-2 text-primary"></i>Start New Parking Session
+                    </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <form action="/sessions/start" method="POST">
+                <form action="/sessions/start" method="POST" id="startSessionForm">
                     <div class="modal-body">
-                        <div class="mb-3">
-                            <label class="form-label">Select Vehicle *</label>
-                            <select class="form-control" name="vehicle_id" required>
-                                <option value="">Choose Vehicle</option>
-                                <% availableVehicles.forEach(vehicle => { %>
-                                    <option value="<%= vehicle.vehicle_id %>">
-                                        <%= vehicle.license_plate %> - <%= vehicle.customer_name %>
-                                    </option>
-                                <% }); %>
-                            </select>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Select Vehicle *</label>
+                                <select class="form-control" name="vehicle_id" required id="vehicleSelect">
+                                    <option value="">Choose Vehicle</option>
+                                    <% if (availableVehicles && availableVehicles.length > 0) { %>
+                                        <% availableVehicles.forEach(vehicle => { %>
+                                            <option value="<%= vehicle.vehicle_id %>" data-type="<%= vehicle.type || '' %>">
+                                                <%= vehicle.license_plate %> - <%= vehicle.customer_name %>
+                                                <% if (vehicle.type) { %>
+                                                    (<%= vehicle.type %>)
+                                                <% } %>
+                                            </option>
+                                        <% }); %>
+                                    <% } else { %>
+                                        <option value="" disabled>No vehicles available</option>
+                                    <% } %>
+                                </select>
+                                <div class="form-text">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Only vehicles not currently parked are shown
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Select Parking Slot *</label>
+                                <select class="form-control" name="slot_id" required id="slotSelect">
+                                    <option value="">Choose Slot</option>
+                                    <% if (availableSlots && availableSlots.length > 0) { %>
+                                        <% availableSlots.forEach(slot => { %>
+                                            <option value="<%= slot.slot_id %>" data-type="<%= slot.slot_type %>">
+                                                Slot <%= slot.slot_number %> - <%= slot.slot_type %>
+                                            </option>
+                                        <% }); %>
+                                    <% } else { %>
+                                        <option value="" disabled>No slots available</option>
+                                    <% } %>
+                                </select>
+                                <div class="form-text">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Only available slots are shown
+                                </div>
+                            </div>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label">Select Parking Slot *</label>
-                            <select class="form-control" name="slot_id" required>
-                                <option value="">Choose Slot</option>
-                                <% availableSlots.forEach(slot => { %>
-                                    <option value="<%= slot.slot_id %>">
-                                        Slot <%= slot.slot_number %> 
-                                    </option>
-                                <% }); %>
-                            </select>
+
+                        <!-- Compatibility Warning -->
+                        <div class="alert alert-warning mt-3" id="compatibilityWarning" style="display: none;">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <span id="warningMessage"></span>
+                        </div>
+
+                        <!-- Session Details Preview -->
+                        <div class="card mt-3" id="sessionPreview" style="display: none;">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-eye me-2"></i>Session Preview
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <strong>Vehicle:</strong> <span id="previewVehicle">-</span><br>
+                                        <strong>Customer:</strong> <span id="previewCustomer">-</span><br>
+                                        <strong>Vehicle Type:</strong> <span id="previewVehicleType">-</span>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <strong>Slot:</strong> <span id="previewSlot">-</span><br>
+                                        <strong>Slot Type:</strong> <span id="previewSlotType">-</span><br>
+                                        <strong>Start Time:</strong> <span id="previewStartTime">-</span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-primary">Start Session</button>
+                        <button type="submit" class="btn btn-primary" id="startSessionBtn">
+                            <i class="fas fa-play me-1"></i>Start Session
+                        </button>
                     </div>
                 </form>
             </div>
@@ -148,5 +375,136 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Debug function to check data
+        function checkSessionData() {
+            console.log('Active Sessions Count:', <%= activeSessions.length %>);
+            console.log('Available Vehicles Count:', <%= availableVehicles.length %>);
+            console.log('Available Slots Count:', <%= availableSlots.length %>);
+            
+            <% if (activeSessions && activeSessions.length > 0) { %>
+                console.log('Active Sessions Data:', <%= JSON.stringify(activeSessions) %>);
+            <% } %>
+        }
+
+        // Call debug function on load
+        document.addEventListener('DOMContentLoaded', function() {
+            checkSessionData();
+            
+            // Toggle session history visibility
+            function toggleSessionHistory() {
+                const historySection = document.getElementById('sessionHistory');
+                const toggleBtn = document.querySelector('[onclick="toggleSessionHistory()"]');
+                
+                if (historySection.style.display === 'none') {
+                    historySection.style.display = 'block';
+                    toggleBtn.innerHTML = '<i class="fas fa-chevron-up me-1"></i>Hide History';
+                } else {
+                    historySection.style.display = 'none';
+                    toggleBtn.innerHTML = '<i class="fas fa-chevron-down me-1"></i>Show History';
+                }
+            }
+
+            // Calculate duration between two dates
+            function calculateDuration(startTime, endTime) {
+                const diffMs = new Date(endTime) - new Date(startTime);
+                const hours = Math.floor(diffMs / (1000 * 60 * 60));
+                const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+                
+                if (hours > 0) {
+                    return `${hours}h ${minutes}m`;
+                }
+                return `${minutes}m`;
+            }
+
+            // Calculate current fee based on start time
+            function calculateCurrentFee(startTime) {
+                const hours = Math.ceil((new Date() - new Date(startTime)) / (1000 * 60 * 60));
+                return (hours * 100).toLocaleString(); // 100 KSh per hour
+            }
+
+            // Calculate total estimated revenue from all active sessions
+            function calculateTotalRevenue(sessions) {
+                let total = 0;
+                sessions.forEach(session => {
+                    const hours = Math.ceil((new Date() - new Date(session.entry_time)) / (1000 * 60 * 60));
+                    total += hours * 100; // 100 KSh per hour
+                });
+                return total.toLocaleString();
+            }
+
+            // Update all session durations and fees
+            function updateSessionCalculations() {
+                // Update individual session cards
+                const durationBadges = document.querySelectorAll('.duration-badge');
+                const feeSpans = document.querySelectorAll('.current-fee');
+                
+                durationBadges.forEach(badge => {
+                    const entryTime = badge.getAttribute('data-entry');
+                    if (entryTime) {
+                        badge.textContent = calculateDuration(entryTime, new Date());
+                    }
+                });
+                
+                feeSpans.forEach(span => {
+                    const entryTime = span.getAttribute('data-entry');
+                    if (entryTime) {
+                        span.textContent = `KSh ${calculateCurrentFee(entryTime)}`;
+                    }
+                });
+                
+                // Update total estimated revenue
+                const activeSessions = <%= JSON.stringify(activeSessions) %>;
+                if (activeSessions && activeSessions.length > 0) {
+                    document.getElementById('estimatedRevenue').textContent = calculateTotalRevenue(activeSessions);
+                }
+            }
+
+            // Confirm session end
+            function confirmEndSession(form, licensePlate) {
+                const card = form.closest('.card');
+                const duration = card.querySelector('.duration-badge').textContent;
+                const currentFee = card.querySelector('.current-fee').textContent;
+                
+                return confirm(`End parking session for ${licensePlate}?\n\nDuration: ${duration}\nCurrent Fee: ${currentFee}\n\nThis action will calculate the final fee and free up the parking slot.`);
+            }
+
+            // Initial calculation update
+            updateSessionCalculations();
+
+            // Update calculations every minute
+            setInterval(updateSessionCalculations, 60000);
+
+            // Auto-refresh sessions every 2 minutes
+            setInterval(() => {
+                if (!document.hidden) {
+                    window.location.reload();
+                }
+            }, 120000);
+        });
+
+        // Make toggleSessionHistory global
+        function toggleSessionHistory() {
+            const historySection = document.getElementById('sessionHistory');
+            const toggleBtn = document.querySelector('[onclick="toggleSessionHistory()"]');
+            
+            if (historySection.style.display === 'none') {
+                historySection.style.display = 'block';
+                toggleBtn.innerHTML = '<i class="fas fa-chevron-up me-1"></i>Hide History';
+            } else {
+                historySection.style.display = 'none';
+                toggleBtn.innerHTML = '<i class="fas fa-chevron-down me-1"></i>Show History';
+            }
+        }
+
+        // Make confirmEndSession global
+        function confirmEndSession(form, licensePlate) {
+            const card = form.closest('.card');
+            const duration = card.querySelector('.duration-badge').textContent;
+            const currentFee = card.querySelector('.current-fee').textContent;
+            
+            return confirm(`End parking session for ${licensePlate}?\n\nDuration: ${duration}\nCurrent Fee: ${currentFee}\n\nThis action will calculate the final fee and free up the parking slot.`);
+        }
+    </script>
 </body>
 </html>

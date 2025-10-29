@@ -17,6 +17,7 @@
         .cancelled-reservation { border-left: 4px solid #dc3545 !important; opacity: 0.7; }
         .price-tag { font-size: 1.1rem; font-weight: bold; color: #198754; }
         .duration-badge { background: #e9ecef; color: #495057; }
+        .status-badge { font-size: 0.8rem; }
     </style>
 </head>
 <body>
@@ -68,6 +69,10 @@
                             Failed to cancel reservation. Please try again!
                         <% } else if (error === 'invalid_reservation') { %>
                             Invalid reservation selected!
+                        <% } else if (error === 'reservation_not_found') { %>
+                            Reservation not found!
+                        <% } else if (error === 'cannot_cancel_late') { %>
+                            Cannot cancel reservation less than 1 hour before start time!
                         <% } %>
                         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
@@ -84,16 +89,27 @@
                                     <% const isUpcoming = now < start; %>
                                     <% const isActive = now >= start && now <= end; %>
                                     <% const isCompleted = now > end; %>
-                                    <% const isCancelled = reservation.status === 'cancelled'; %>
+                                    <% const isCancelled = reservation.status === 'Cancelled'; %>
+                                    <% const isConfirmed = reservation.status === 'Confirmed'; %>
+                                    <% const isPending = reservation.status === 'Pending'; %>
                                     <%= isCancelled ? 'cancelled-reservation' : isUpcoming ? 'border-info' : isActive ? 'border-success' : 'border-secondary' %>
-                                    <%= reservation.payment_status === 'pending' ? 'payment-pending' : reservation.payment_status === 'completed' ? 'payment-completed' : '' %>">
+                                    <%= reservation.payment_status === 'pending' && !isCancelled ? 'payment-pending' : reservation.payment_status === 'completed' ? 'payment-completed' : '' %>">
+                                    
                                     <div class="card-body d-flex flex-column">
                                         <div class="d-flex justify-content-between align-items-start mb-2">
                                             <h5 class="card-title">Slot <%= reservation.slot_number %></h5>
                                             <div class="text-end">
-                                                <span class="badge 
-                                                    <%= isCancelled ? 'bg-danger' : isUpcoming ? 'bg-info' : isActive ? 'bg-success' : 'bg-secondary' %>">
-                                                    <%= isCancelled ? 'Cancelled' : isUpcoming ? 'Upcoming' : isActive ? 'Active' : 'Completed' %>
+                                                <span class="badge status-badge 
+                                                    <%= isCancelled ? 'bg-danger' : 
+                                                       isConfirmed ? 'bg-success' : 
+                                                       isPending ? 'bg-warning' : 
+                                                       isUpcoming ? 'bg-info' : 
+                                                       isActive ? 'bg-success' : 'bg-secondary' %>">
+                                                    <%= isCancelled ? 'Cancelled' : 
+                                                       isConfirmed ? 'Confirmed' :
+                                                       isPending ? 'Pending' :
+                                                       isUpcoming ? 'Upcoming' : 
+                                                       isActive ? 'Active' : 'Completed' %>
                                                 </span>
                                                 <div class="price-tag mt-1">
                                                     KSh <%= (reservation.amount || 0).toLocaleString() %>
@@ -119,7 +135,7 @@
                                                 <div class="text-center text-muted">
                                                     <i class="fas fa-ban me-1"></i>Reservation Cancelled
                                                 </div>
-                                            <% } else if (reservation.payment_status === 'completed') { %>
+                                            <% } else if (isConfirmed || reservation.payment_status === 'completed') { %>
                                                 <div class="text-center">
                                                     <span class="badge bg-success me-2">
                                                         <i class="fas fa-check me-1"></i>Paid
@@ -146,7 +162,7 @@
                                                     </button>
                                                     
                                                     <!-- Cancel Button for upcoming reservations -->
-                                                    <% if (isUpcoming) { %>
+                                                    <% if (isUpcoming || isPending) { %>
                                                         <button class="btn btn-outline-danger btn-sm cancel-btn"
                                                                 data-reservation-id="<%= reservation.reservation_id %>">
                                                             <i class="fas fa-times me-1"></i>Cancel Reservation
@@ -201,8 +217,8 @@
                                 <select class="form-control" name="slot_id" required id="slotSelect">
                                     <option value="">Choose Parking Slot</option>
                                     <% slots.forEach(slot => { %>
-                                        <option value="<%= slot.slot_id %>" data-type="<%= slot.slot_type %>" data-rate="<%= slot.hourly_rate || 100 %>">
-                                            Slot <%= slot.slot_number %> - <%= slot.slot_type %> (KSh <%= slot.hourly_rate || 100 %>/hour)
+                                        <option value="<%= slot.slot_id %>" data-type="<%= slot.slot_type %>">
+                                            Slot <%= slot.slot_number %> - <%= slot.slot_type %>
                                         </option>
                                     <% }); %>
                                 </select>
@@ -283,6 +299,7 @@
                     </div>
 
                     <form id="paymentForm">
+                        <input type="hidden" id="paymentReservationIdInput" name="reservation_id">
                         <div class="mb-3">
                             <label class="form-label">Payment Method *</label>
                             <select class="form-select" id="paymentMethod" required>
@@ -436,10 +453,9 @@
             const endTimeInput = document.getElementById('endTime');
             const slotSelect = document.getElementById('slotSelect');
 
-            if (startTimeInput && endTimeInput && slotSelect) {
+            if (startTimeInput && endTimeInput) {
                 startTimeInput.addEventListener('change', calculatePrice);
                 endTimeInput.addEventListener('change', calculatePrice);
-                slotSelect.addEventListener('change', calculatePrice);
             }
 
             // Set minimum end time based on start time
@@ -449,47 +465,53 @@
                     if (endTimeInput.value && endTimeInput.value < this.value) {
                         endTimeInput.value = '';
                     }
+                    calculatePrice();
                 });
+            }
+
+            // Calculate price when end time changes
+            if (endTimeInput) {
+                endTimeInput.addEventListener('change', calculatePrice);
             }
         });
 
         function calculatePrice() {
             const startTime = document.getElementById('startTime').value;
             const endTime = document.getElementById('endTime').value;
-            const selectedSlot = document.getElementById('slotSelect').selectedOptions[0];
             
-            if (!startTime || !endTime || !selectedSlot || !selectedSlot.dataset.rate) {
+            if (!startTime || !endTime) {
                 document.getElementById('priceCalculation').style.display = 'none';
                 return;
             }
 
             const start = new Date(startTime);
             const end = new Date(endTime);
-            const durationHours = (end - start) / (1000 * 60 * 60);
+            const durationHours = Math.ceil((end - start) / (1000 * 60 * 60)); // Round up to nearest hour
             
             if (durationHours <= 0) {
                 document.getElementById('priceCalculation').style.display = 'none';
                 return;
             }
 
-            const hourlyRate = parseFloat(selectedSlot.dataset.rate);
-            const totalAmount = Math.ceil(durationHours) * hourlyRate; // Round up to nearest hour
+            const hourlyRate = 100; // Fixed rate of 100 KSh per hour
+            const totalAmount = durationHours * hourlyRate;
 
             document.getElementById('calculatedAmount').textContent = 'KSh ' + totalAmount.toLocaleString();
             document.getElementById('calculationDetails').textContent = 
-                `(${Math.ceil(durationHours)} hours × KSh ${hourlyRate}/hour)`;
+                `(${durationHours} hours × KSh ${hourlyRate}/hour)`;
             document.getElementById('priceCalculation').style.display = 'block';
         }
 
         function showPaymentModal(reservationData) {
             document.getElementById('paymentReservationId').textContent = currentReservationId;
+            document.getElementById('paymentReservationIdInput').value = currentReservationId;
             document.getElementById('paymentAmount').textContent = 'KSh ' + parseFloat(reservationData.amount || 0).toLocaleString();
             document.getElementById('paymentVehicle').textContent = reservationData.vehicle;
             document.getElementById('paymentSlot').textContent = 'Slot ' + reservationData.slot;
             
             const startTime = new Date(reservationData.startTime).toLocaleString();
             const endTime = new Date(reservationData.endTime).toLocaleString();
-            document.getElementById('paymentPeriod').textContent = `${startTime} to ${endTime}`;
+            document.getElementById('paymentPeriod').innerHTML = `${startTime}<br>to<br>${endTime}`;
 
             // Reset form
             document.getElementById('paymentForm').reset();
@@ -544,8 +566,11 @@
         }
 
         function completePayment(paymentMethod) {
-            // Redirect to payment confirmation page
-            window.location.href = `/reservations/payment/process?reservation_id=${currentReservationId}&method=${paymentMethod}&amount=${currentReservationData.amount || 0}`;
+            // Get the amount from the reservation data
+            const amount = currentReservationData.amount;
+            
+            // Redirect to payment processing with all necessary parameters
+            window.location.href = `/reservations/payment/process?reservation_id=${currentReservationId}&method=${paymentMethod}&amount=${amount}`;
         }
 
         function confirmCancellation() {
@@ -555,9 +580,54 @@
             cancelBtn.disabled = true;
             cancelBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Cancelling...';
 
-            // Redirect to cancellation endpoint
-            window.location.href = `/reservations/cancel/${currentReservationId}`;
+            // Create a form to submit the cancellation
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `/reservations/cancel/${currentReservationId}`;
+            
+            // Add CSRF token if needed (you might want to add this for security)
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = '_csrf';
+            csrfInput.value = '<%= typeof csrfToken !== "undefined" ? csrfToken : "" %>';
+            form.appendChild(csrfInput);
+            
+            document.body.appendChild(form);
+            form.submit();
         }
+
+        // Enhanced form validation for reservation creation
+        document.getElementById('reservationForm')?.addEventListener('submit', function(e) {
+            const startTime = document.getElementById('startTime').value;
+            const endTime = document.getElementById('endTime').value;
+            
+            if (!startTime || !endTime) {
+                e.preventDefault();
+                alert('Please select both start and end times');
+                return;
+            }
+
+            const start = new Date(startTime);
+            const end = new Date(endTime);
+            const now = new Date();
+
+            if (start < now) {
+                e.preventDefault();
+                alert('Start time cannot be in the past');
+                return;
+            }
+
+            if (end <= start) {
+                e.preventDefault();
+                alert('End time must be after start time');
+                return;
+            }
+
+            // Show loading state
+            const submitBtn = document.getElementById('submitReservation');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Creating...';
+        });
     </script>
 </body>
 </html>

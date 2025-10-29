@@ -643,34 +643,61 @@ app.post("/slots/update/:id", requireRole(['admin', 'operator']), (req, res) => 
   });
 });
 
-// Sessions - Admin only
+// Admin Sessions Route - UPDATED with proper data fetching
 app.get("/admin/sessions", requireRole(['admin', 'operator']), (req, res) => {
-  db.query(`
-    SELECT ps.*, v.license_plate, c.full_name as customer_name, p.slot_number
+  // Get active sessions
+  const activeSessionsQuery = `
+    SELECT ps.*, v.license_plate, c.full_name as customer_name, p.slot_number, v.type as vehicle_type
     FROM ParkingSession ps
     JOIN Vehicle v ON ps.vehicle_id = v.vehicle_id
     JOIN Customer c ON v.customer_id = c.customer_id
     JOIN ParkingSlot p ON ps.slot_id = p.slot_id
     WHERE ps.exit_time IS NULL
     ORDER BY ps.entry_time DESC
-  `, (err, activeSessions) => {
-    db.query(`
-      SELECT v.vehicle_id, v.license_plate, c.full_name as customer_name
-      FROM Vehicle v
-      JOIN Customer c ON v.customer_id = c.customer_id
-      WHERE v.vehicle_id NOT IN (
-        SELECT vehicle_id FROM ParkingSession WHERE exit_time IS NULL
-      )
-    `, (err, availableVehicles) => {
-      // FIXED: Remove maintenance_mode condition since column doesn't exist
-      db.query(`
-        SELECT * FROM ParkingSlot 
-        WHERE is_occupied = FALSE
-      `, (err, availableSlots) => {
+  `;
+
+  // Get available vehicles (not currently in active sessions)
+  const availableVehiclesQuery = `
+    SELECT v.vehicle_id, v.license_plate, c.full_name as customer_name, v.type
+    FROM Vehicle v
+    JOIN Customer c ON v.customer_id = c.customer_id
+    WHERE v.vehicle_id NOT IN (
+      SELECT vehicle_id FROM ParkingSession WHERE exit_time IS NULL
+    )
+  `;
+
+  // Get available slots
+  const availableSlotsQuery = `
+    SELECT * FROM ParkingSlot 
+    WHERE is_occupied = FALSE
+  `;
+
+  db.query(activeSessionsQuery, (err, activeSessions) => {
+    if (err) {
+      console.error("Error fetching active sessions:", err);
+      activeSessions = [];
+    }
+
+    db.query(availableVehiclesQuery, (err, availableVehicles) => {
+      if (err) {
+        console.error("Error fetching available vehicles:", err);
+        availableVehicles = [];
+      }
+
+      db.query(availableSlotsQuery, (err, availableSlots) => {
+        if (err) {
+          console.error("Error fetching available slots:", err);
+          availableSlots = [];
+        }
+
+        console.log(`Active Sessions: ${activeSessions.length}`); // Debug log
+        console.log(`Available Vehicles: ${availableVehicles.length}`); // Debug log
+        console.log(`Available Slots: ${availableSlots.length}`); // Debug log
+
         res.render("admin/sessions", {
-          activeSessions: err ? [] : activeSessions,
-          availableVehicles: err ? [] : availableVehicles,
-          availableSlots: err ? [] : availableSlots,
+          activeSessions: activeSessions || [],
+          availableVehicles: availableVehicles || [],
+          availableSlots: availableSlots || [],
           currentPage: "sessions",
           success: req.query.success,
           error: req.query.error
@@ -803,10 +830,22 @@ app.get("/user/sessions", requireAuth, (req, res) => {
   });
 });
 
+// ===== RESERVATION ROUTES - UPDATED =====
+
 // Reservations - Admin view
 app.get("/admin/reservations", requireRole(['admin', 'operator']), (req, res) => {
   const query = `
-    SELECT r.*, c.full_name AS customer_name, v.license_plate, ps.slot_number
+    SELECT r.*, c.full_name AS customer_name, v.license_plate, ps.slot_number,
+           CASE 
+               WHEN r.cost > 0 THEN r.cost
+               ELSE TIMESTAMPDIFF(HOUR, r.start_time, r.end_time) * 100 
+           END as amount,
+           CASE 
+               WHEN r.status = 'Confirmed' AND r.cost > 0 THEN 'completed'
+               WHEN r.status = 'Confirmed' THEN 'completed'
+               ELSE 'pending'
+           END as payment_status,
+           TIMESTAMPDIFF(HOUR, r.start_time, r.end_time) as duration_hours
     FROM Reservation r
     JOIN Customer c ON r.customer_id = c.customer_id
     JOIN Vehicle v ON r.vehicle_id = v.vehicle_id
@@ -866,10 +905,43 @@ app.get("/admin/reservations", requireRole(['admin', 'operator']), (req, res) =>
   });
 });
 
+// Mark Reservation as Paid - Admin only
+app.post("/reservations/mark-paid/:id", requireRole(['admin', 'operator']), (req, res) => {
+    const reservationId = req.params.id;
+
+    // Update reservation status to Confirmed (which implies paid in our system)
+    db.query(
+        "UPDATE Reservation SET status = 'Confirmed' WHERE reservation_id = ?",
+        [reservationId],
+        (err, result) => {
+            if (err) {
+                console.error("Error marking reservation as paid:", err);
+                return res.redirect("/admin/reservations?error=mark_paid_failed");
+            }
+
+            if (result.affectedRows === 0) {
+                return res.redirect("/admin/reservations?error=reservation_not_found");
+            }
+
+            res.redirect("/admin/reservations?success=reservation_marked_paid");
+        }
+    );
+});
+
 // Reservations - User view
 app.get("/user/reservations", requireAuth, (req, res) => {
   const query = `
-    SELECT r.*, c.full_name AS customer_name, v.license_plate, ps.slot_number
+    SELECT r.*, c.full_name AS customer_name, v.license_plate, ps.slot_number,
+           CASE 
+               WHEN r.cost > 0 THEN r.cost
+               ELSE TIMESTAMPDIFF(HOUR, r.start_time, r.end_time) * 100 
+           END as amount,
+           CASE 
+               WHEN r.status = 'Confirmed' AND r.cost > 0 THEN 'completed'
+               WHEN r.status = 'Confirmed' THEN 'completed'
+               ELSE 'pending'
+           END as payment_status,
+           TIMESTAMPDIFF(HOUR, r.start_time, r.end_time) as duration_hours
     FROM Reservation r
     JOIN Customer c ON r.customer_id = c.customer_id
     JOIN Vehicle v ON r.vehicle_id = v.vehicle_id
@@ -899,24 +971,127 @@ app.get("/user/reservations", requireAuth, (req, res) => {
   });
 });
 
+// Reservation Creation - UPDATED with cost calculation
 app.post("/reservations/add", requireAuth, (req, res) => {
-  const { vehicle_id, slot_id, start_time, end_time, customer_id } = req.body;
-  const finalCustomerId = req.session.user.role === 'customer' ? req.session.user.id : customer_id;
+    const { vehicle_id, slot_id, start_time, end_time, customer_id } = req.body;
+    const finalCustomerId = req.session.user.role === 'customer' ? req.session.user.id : customer_id;
 
-  if (!vehicle_id || !slot_id || !start_time || !end_time) {
-    const redirectPath = req.session.user.role === 'customer' ? '/user/reservations' : '/admin/reservations';
-    return res.redirect(`${redirectPath}?error=missing_fields`);
-  }
-
-  db.query(
-    "INSERT INTO Reservation (customer_id, vehicle_id, slot_id, start_time, end_time) VALUES (?, ?, ?, ?, ?)",
-    [finalCustomerId, vehicle_id, slot_id, start_time, end_time],
-    (err) => {
-      const error = err ? (err.code === 'ER_DUP_ENTRY' ? 'duplicate_reservation' : 'reservation_failed') : null;
-      const redirectPath = req.session.user.role === 'customer' ? '/user/reservations' : '/admin/reservations';
-      res.redirect(`${redirectPath}?${error ? 'error=' + error : 'success=reservation_created'}`);
+    if (!vehicle_id || !slot_id || !start_time || !end_time) {
+        const redirectPath = req.session.user.role === 'customer' ? '/user/reservations' : '/admin/reservations';
+        return res.redirect(`${redirectPath}?error=missing_fields`);
     }
-  );
+
+    // Calculate cost based on duration (100 KSh per hour)
+    const start = new Date(start_time);
+    const end = new Date(end_time);
+    const durationHours = Math.ceil((end - start) / (1000 * 60 * 60)); // Round up to nearest hour
+    const cost = durationHours * 100;
+
+    db.query(
+        "INSERT INTO Reservation (customer_id, vehicle_id, slot_id, start_time, end_time, cost) VALUES (?, ?, ?, ?, ?, ?)",
+        [finalCustomerId, vehicle_id, slot_id, start_time, end_time, cost],
+        (err) => {
+            const error = err ? (err.code === 'ER_DUP_ENTRY' ? 'duplicate_reservation' : 'reservation_failed') : null;
+            const redirectPath = req.session.user.role === 'customer' ? '/user/reservations' : '/admin/reservations';
+            res.redirect(`${redirectPath}?${error ? 'error=' + error : 'success=reservation_created'}`);
+        }
+    );
+});
+
+// Reservation Cancellation Route - NEW
+app.post("/reservations/cancel/:id", requireAuth, (req, res) => {
+    const reservationId = req.params.id;
+    const userId = req.session.user.id;
+
+    // Verify reservation belongs to user (for customers) or allow admin/operator
+    let query = `
+        SELECT r.* 
+        FROM Reservation r 
+        WHERE r.reservation_id = ?
+    `;
+    let queryParams = [reservationId];
+
+    if (req.session.user.role === 'customer') {
+        query += " AND r.customer_id = ?";
+        queryParams.push(userId);
+    }
+
+    db.query(query, queryParams, (err, results) => {
+        if (err || results.length === 0) {
+            const redirectPath = req.session.user.role === 'customer' ? '/user/reservations' : '/admin/reservations';
+            return res.redirect(`${redirectPath}?error=reservation_not_found`);
+        }
+
+        const reservation = results[0];
+        const startTime = new Date(reservation.start_time);
+        const now = new Date();
+        const timeDiff = startTime - now;
+        const hoursDiff = timeDiff / (1000 * 60 * 60);
+
+        // Allow cancellation only if more than 1 hour before start time
+        if (hoursDiff < 1) {
+            const redirectPath = req.session.user.role === 'customer' ? '/user/reservations' : '/admin/reservations';
+            return res.redirect(`${redirectPath}?error=cannot_cancel_late`);
+        }
+
+        // Update reservation status to Cancelled
+        db.query(
+            "UPDATE Reservation SET status = 'Cancelled' WHERE reservation_id = ?",
+            [reservationId],
+            (err) => {
+                const redirectPath = req.session.user.role === 'customer' ? '/user/reservations' : '/admin/reservations';
+                if (err) {
+                    console.error("Cancellation error:", err);
+                    return res.redirect(`${redirectPath}?error=cancellation_failed`);
+                }
+                res.redirect(`${redirectPath}?success=reservation_cancelled`);
+            }
+        );
+    });
+});
+
+// Reservation Payment Processing - UPDATED
+app.get("/reservations/payment/process", requireAuth, (req, res) => {
+    const { reservation_id, method, amount } = req.query;
+    
+    if (!reservation_id) {
+        return res.redirect("/user/reservations?error=invalid_reservation");
+    }
+
+    // Verify the reservation belongs to the current user
+    const verifyQuery = `
+        SELECT r.*, v.license_plate, ps.slot_number
+        FROM Reservation r
+        JOIN Vehicle v ON r.vehicle_id = v.vehicle_id
+        JOIN ParkingSlot ps ON r.slot_id = ps.slot_id
+        WHERE r.reservation_id = ? AND r.customer_id = ?
+    `;
+    
+    db.query(verifyQuery, [reservation_id, req.session.user.id], (err, results) => {
+        if (err || results.length === 0) {
+            return res.redirect("/user/reservations?error=reservation_not_found");
+        }
+
+        const reservation = results[0];
+        
+        // Update reservation status to 'Confirmed' and set cost
+        db.query(
+            "UPDATE Reservation SET status = 'Confirmed', cost = ? WHERE reservation_id = ?",
+            [amount, reservation_id],
+            (err) => {
+                if (err) {
+                    console.error("Payment update error:", err);
+                    return res.redirect("/user/reservations?error=payment_failed");
+                }
+                
+                // Generate transaction ID
+                const transaction_id = 'RES_TXN_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                
+                // Redirect back to reservations with success message
+                res.redirect("/user/reservations?success=payment_completed");
+            }
+        );
+    });
 });
 
 // Customers - Admin only
@@ -1190,67 +1365,6 @@ app.post("/payment/process", requireAuth, (req, res) => {
         );
     });
 });
-
-
-// Reservation Payment Routes
-// Reservation Payment Routes - UPDATED (without payment_status)
-// Reservation Payment Routes - UPDATED (using correct columns)
-app.get("/reservations/payment/process", requireAuth, (req, res) => {
-    const { reservation_id, method, amount } = req.query;
-    
-    if (!reservation_id) {
-        return res.redirect("/user/reservations?error=invalid_reservation");
-    }
-
-    // Verify the reservation belongs to the current user
-    const verifyQuery = `
-        SELECT r.*, v.license_plate, ps.slot_number
-        FROM Reservation r
-        JOIN Vehicle v ON r.vehicle_id = v.vehicle_id
-        JOIN ParkingSlot ps ON r.slot_id = ps.slot_id
-        WHERE r.reservation_id = ? AND r.customer_id = ?
-    `;
-    
-    db.query(verifyQuery, [reservation_id, req.session.user.id], (err, results) => {
-        if (err || results.length === 0) {
-            return res.redirect("/user/reservations?error=reservation_not_found");
-        }
-
-        const reservation = results[0];
-        
-        // Update reservation status to 'Confirmed' and set cost
-        db.query(
-            "UPDATE Reservation SET status = 'Confirmed', cost = ? WHERE reservation_id = ?",
-            [amount, reservation_id],
-            (err) => {
-                if (err) {
-                    console.error("Payment update error:", err);
-                    return res.redirect("/user/reservations?error=payment_failed");
-                }
-                
-                // Generate transaction ID
-                const transaction_id = 'RES_TXN_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-                
-                // Redirect back to reservations with success message
-                res.redirect("/user/reservations?success=payment_completed");
-            }
-        );
-    });
-});
-
-// Update the reservations query to include payment status and amount
-// In both /user/reservations and /admin/reservations routes, modify the query to:
-const query = `
-    SELECT r.*, c.full_name AS customer_name, v.license_plate, ps.slot_number,
-           COALESCE(r.payment_status, 'pending') as payment_status,
-           r.amount
-    FROM Reservation r
-    JOIN Customer c ON r.customer_id = c.customer_id
-    JOIN Vehicle v ON r.vehicle_id = v.vehicle_id
-    JOIN ParkingSlot ps ON r.slot_id = ps.slot_id
-    WHERE r.customer_id = ?
-    ORDER BY r.start_time DESC
-`;
 
 // Add Slot Route - UPDATED
 app.post('/slots/add', requireRole(['admin', 'operator']), (req, res) => {

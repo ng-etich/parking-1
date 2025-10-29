@@ -44,8 +44,9 @@
       flex: 1;
       padding: 2rem;
       max-width: 1400px;
-      margin: 250px;
+      margin: 0 auto;
       width: 100%;
+      margin-left: 250px; /* Account for sidebar */
     }
 
     /* Welcome Section */
@@ -451,6 +452,7 @@
     @media (max-width: 1024px) {
       .dashboard-main {
         padding: 1.5rem;
+        margin-left: 0;
       }
       
       .stats-grid {
@@ -461,6 +463,7 @@
     @media (max-width: 768px) {
       .dashboard-main {
         padding: 1rem;
+        margin-left: 0;
       }
 
       .welcome-section h1 {
@@ -514,15 +517,47 @@
       0% { background-position: 200% 0; }
       100% { background-position: -200% 0; }
     }
+
+    /* Notification Styles */
+    .notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 1rem 1.5rem;
+      border-radius: 12px;
+      color: white;
+      font-weight: 600;
+      z-index: 1000;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+      animation: slideInRight 0.3s ease;
+    }
+
+    .notification.success {
+      background: #10b981;
+    }
+
+    .notification.warning {
+      background: #ef4444;
+    }
+
+    @keyframes slideInRight {
+      from {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
   </style>
 </head>
 <body>
   <%- include("../patials/_dashnav") %>
-  <div class="dashboard-wrapper"   style=" margin-left="250px">
+  
+  <div class="dashboard-wrapper">
     <!-- Header -->
     <%- include("../patials/_header") %>
-
-
 
     <main class="dashboard-main">
       <!-- Welcome Section -->
@@ -591,10 +626,10 @@
           <div class="stat-card">
             <div class="stat-header">
               <div class="stat-icon">
-                <i class="fas fa-clock"></i>
+                <i class="fas fa-money-bill-wave"></i>
               </div>
               <div class="stat-trend trend-up">
-                Ksh <%= stats.todayRevenue || 0 %>
+                Ksh <%= parseFloat(stats.todayRevenue || 0).toLocaleString() %>
               </div>
             </div>
             <div class="stat-content">
@@ -666,11 +701,17 @@
               <div class="stat-icon">
                 <i class="fas fa-chart-line"></i>
               </div>
-              <div class="stat-trend">View history</div>
+              <div class="stat-trend">
+                <% if (stats.totalSpent && stats.totalSpent > 0) { %>
+                  Ksh <%= parseFloat(stats.totalSpent).toLocaleString() %>
+                <% } else { %>
+                  View history
+                <% } %>
+              </div>
             </div>
             <div class="stat-content">
-              <h3>Ksh 0</h3>
-              <p class="stat-label">Monthly Spending</p>
+              <h3>Ksh <%= stats.totalSpent ? parseFloat(stats.totalSpent).toLocaleString() : '0' %></h3>
+              <p class="stat-label">Total Spending</p>
             </div>
           </div>
         <% } %>
@@ -734,12 +775,12 @@
               <p class="action-description">View and manage your parking bookings</p>
             </a>
 
-            <a href="/user/reservations" class="action-card primary">
+            <a href="/user/sessions" class="action-card primary">
               <div class="action-icon">
                 <i class="fas fa-parking"></i>
               </div>
-              <h3 class="action-title">Park Now</h3>
-              <p class="action-description">Start a new parking session immediately</p>
+              <h3 class="action-title">Parking History</h3>
+              <p class="action-description">View your parking sessions and payment history</p>
             </a>
 
             <a href="/user/reservations" class="action-card primary">
@@ -791,7 +832,7 @@
                   <div class="activity-time">
                     <%= new Date(activity.entry_time).toLocaleString() %>
                     <% if (activity.total_fee > 0) { %>
-                      • Ksh <%= activity.total_fee %>
+                      • Ksh <%= parseFloat(activity.total_fee).toLocaleString() %>
                     <% } %>
                     <% if (activity.customer_name && (isAdmin || isOperator)) { %>
                       • <%= activity.customer_name %>
@@ -820,7 +861,7 @@
                   <div class="activity-time">
                     <%= new Date(session.entry_time).toLocaleString() %>
                     <% if (session.total_fee > 0) { %>
-                      • Ksh <%= session.total_fee %>
+                      • Ksh <%= parseFloat(session.total_fee).toLocaleString() %>
                     <% } %>
                   </div>
                 </div>
@@ -916,56 +957,85 @@
       window.addEventListener('offline', updateOnlineStatus);
 
       function showNotification(message, type) {
+        // Remove existing notifications
+        const existingNotifications = document.querySelectorAll('.notification');
+        existingNotifications.forEach(notification => notification.remove());
+
         // Create and show notification
         const notification = document.createElement('div');
-        notification.className = 'notification';
+        notification.className = `notification ${type}`;
         notification.innerHTML = `
-          <div style="
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 1rem 1.5rem;
-            border-radius: 12px;
-            color: white;
-            font-weight: 600;
-            z-index: 1000;
-            background: ${type === 'success' ? '#10b981' : '#ef4444'};
-            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-            animation: slideInRight 0.3s ease;
-          ">
-            <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-triangle'} me-2"></i>
-            ${message}
-          </div>
+          <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-triangle'} me-2"></i>
+          ${message}
         `;
         
         document.body.appendChild(notification);
         
         setTimeout(() => {
-          notification.remove();
+          if (notification.parentNode) {
+            notification.remove();
+          }
         }, 4000);
       }
 
-      // Add CSS for slide-in animation
-      const style = document.createElement('style');
-      style.textContent = `
-        @keyframes slideInRight {
-          from {
-            transform: translateX(100%);
-            opacity: 0;
-          }
-          to {
-            transform: translateX(0);
-            opacity: 1;
-          }
+      // Real-time stats updates for customers
+      <% if (isCustomer) { %>
+      function updateCustomerStats() {
+        // Simulate real-time updates for customer dashboard
+        const activeSessions = <%= stats.activeSessions || 0 %>;
+        const upcomingReservations = <%= stats.upcomingReservations || 0 %>;
+        
+        // Update active sessions count if needed
+        const activeSessionsElement = document.querySelector('.stat-card:nth-child(2) .stat-content h3');
+        if (activeSessionsElement) {
+          // This would typically come from an API call
+          // For now, we'll just update the display
+          console.log('Updating customer dashboard stats...');
         }
-      `;
-      document.head.appendChild(style);
+      }
+      
+      // Update customer stats every 30 seconds
+      setInterval(updateCustomerStats, 30000);
+      <% } %>
+
+      // Add CSS for slide-in animation if not already present
+      if (!document.querySelector('#notification-styles')) {
+        const style = document.createElement('style');
+        style.id = 'notification-styles';
+        style.textContent = `
+          @keyframes slideInRight {
+            from {
+              transform: translateX(100%);
+              opacity: 0;
+            }
+            to {
+              transform: translateX(0);
+              opacity: 1;
+            }
+          }
+        `;
+        document.head.appendChild(style);
+      }
     });
 
     function refreshDashboardData() {
       // Implement AJAX call to refresh dashboard data
       console.log('Refreshing dashboard data...');
       // fetch('/api/dashboard/stats').then(...)
+      
+      // For now, just reload the page
+      window.location.reload();
+    }
+
+    // Service Worker registration for PWA functionality
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js')
+        .then(registration => {
+          console.log('SW registered: ', registration);
+        })
+        .catch(registrationError => {
+          console.log('SW registration failed: ', registrationError);
+        });
     }
   </script>
 </body>
