@@ -28,6 +28,10 @@
       padding: 2rem;
       position: relative;
       overflow: hidden;
+      background-image: url('https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2069&q=80');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
     }
 
     .hero-section::before {
@@ -37,7 +41,7 @@
       left: 0;
       right: 0;
       bottom: 0;
-      /* background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000"><polygon fill="rgba(255,255,255,0.05)" points="0,1000 1000,0 1000,1000"/></svg>'); */
+      background: rgba(0, 0, 0, 0.5); /* Dark overlay for better text readability */
       animation: float 6s ease-in-out infinite;
     }
 
@@ -81,10 +85,7 @@
     }
 
     .hero-title .highlight {
-      color: black;
-      /* background: linear-gradient(45deg, #ffd89b, #19547b); */
-      /* -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent; */
+      color: #a8e207; /* Changed to match the green theme */
       background-clip: text;
     }
 
@@ -119,9 +120,9 @@
     }
 
     .cta-button.primary {
-      background: linear-gradient(135deg, #ffd89b, #19547b);
+      background: linear-gradient(135deg, #a8e207, #19547b);
       color: white;
-      box-shadow: 0 8px 30px rgba(255, 216, 155, 0.4);
+      box-shadow: 0 8px 30px rgba(168, 226, 7, 0.4);
     }
 
     .cta-button.secondary {
@@ -137,7 +138,7 @@
     }
 
     .cta-button.primary:hover {
-      background: linear-gradient(135deg, #19547b, #ffd89b);
+      background: linear-gradient(135deg, #19547b, #a8e207);
     }
 
     .cta-button.secondary:hover {
@@ -356,17 +357,14 @@
         with seamless reservations, real-time availability, and effortless payments. 
       </p>
       <p class="hero-subtitle">
-    
         Your time is precious—spend it living, not parking.
       </p>
 
       <div class="cta-buttons">
         <a href="/register" class="cta-button primary">
-          <!-- <span>🎯</span> -->
           Start Your Journey
         </a>
         <a href="/login" class="cta-button secondary">
-          <!-- <span>🔑</span> -->
           Returning User
         </a>
       </div>
@@ -383,7 +381,6 @@
   <section class="features-section">
     <div class="features-grid">
       <div class="feature-card fade-in">
-        <!-- <div class="feature-icon">🚀</div> -->
         <h3 class="feature-title">Lightning Fast</h3>
         <p class="feature-description">
           Find and reserve parking in seconds, not minutes. Our optimized system gets you parked faster, 
@@ -392,7 +389,6 @@
       </div>
 
       <div class="feature-card fade-in">
-        <!-- <div class="feature-icon">💡</div> -->
         <h3 class="feature-title">Smart Technology</h3>
         <p class="feature-description">
           AI-powered parking recommendations and real-time availability updates ensure you always get 
@@ -401,7 +397,6 @@
       </div>
 
       <div class="feature-card fade-in">
-        <!-- <div class="feature-icon">🛡️</div> -->
         <h3 class="feature-title">Secure & Reliable</h3>
         <p class="feature-description">
           Your peace of mind is our priority. With enterprise-grade security and 99.9% uptime, 
@@ -441,9 +436,6 @@
     </div>
     <div class="testimonial-author">- Sarah M., Regular User</div>
   </section>
-
-
-  <%- include("./patials/_footer.ejs") %>
 
   <script>
     // Scroll animations
